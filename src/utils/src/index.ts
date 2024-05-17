@@ -87,7 +87,7 @@ export class Utils {
 
     var distT = 0;
 
-    ra = playerAngle - DR * 15;
+    ra = playerAngle - (DR/4) * 120;
     gl.useProgram(program);
     var rayColorUniformLocation = gl.getUniformLocation(program, "u_color");
 
@@ -99,7 +99,7 @@ export class Utils {
       ra -= 2 * PI;
     }
 
-    for (let r = 0; r < 30; r++) {
+    for (let r = 0; r < 240; r++) {
 
       gl.viewport(0, 0, gl.canvas.width/2, gl.canvas.height);
 
@@ -131,7 +131,7 @@ export class Utils {
         xO = -yO * aTan;
       }
 
-      while (dof < 8) {
+      while (dof < 20) {
         mX = (rX | 0) >> 6;
         mY = (rY | 0) >> 6;
         mP = mY * mapX + mX;
@@ -141,7 +141,7 @@ export class Utils {
           hY = rY;
           disH = this.dist(playerPositionX, playerPositionY, hX, hY);
 
-          dof = 8;
+          dof = 20;
         } else {
           rX += xO;
           rY += yO;
@@ -175,10 +175,10 @@ export class Utils {
       if (ra == 0 || ra == PI) {
           rX = playerPositionX;
           rY = playerPositionY;
-          dof = 8;
+          dof = 20;
       }
       
-      while (dof < 8) {
+      while (dof < 20) {
           mX = (rX | 0) >> 6;
           mY = (rY | 0) >> 6;
           mP = mY * mapX + mX;
@@ -187,7 +187,7 @@ export class Utils {
               vX = rX;
               vY = rY;
               disV = this.dist(playerPositionX, playerPositionY, vX, vY);
-              dof = 8;
+              dof = 20;
           }
 
           else {
@@ -233,48 +233,34 @@ export class Utils {
 
         //Draw 3D Walls
         //Fix fisheye distortion
-        var ca = playerAngle - ra;
+      //   var ca = playerAngle - ra;
         
-        if (ca < 0) {
-            ca += 2 * PI; 
-        }
+      //   if (ca < 0) {
+      //       ca += 2 * PI; 
+      //   }
 
-        if (ca > 2 * PI) {
-            ca -= 2 * PI;
-        }
+      //   if (ca > 2 * PI) {
+      //       ca -= 2 * PI;
+      //   }
 
-      distT = distT * Math.cos(ca);
+      // distT = distT * Math.cos(ca);
         
       var lineH = (tileSize * 1280) / distT;
       var lineO = 640 - lineH / 2;
-      // glMap.enable(glMap.SCISSOR_TEST);
 
-      // First viewport: left half
-  
-      
-      // Second viewport: right half
-      // glMap.viewport(glMap.canvas.width / 2, 0, glMap.canvas.width / 2, glMap.canvas.height);
-      // glMap.scissor(glMap.canvas.width / 2, 0, glMap.canvas.width / 2, glMap.canvas.height);
-      // glMap.clearColor(0.25, 0.25, 0.25, 1);
-      // glMap.clear(glMap.COLOR_BUFFER_BIT);
-  
-      // glMap.viewport(0, 0, glMap.canvas.width / 2, glMap.canvas.height);
-      // glMap.scissor(0, 0, glMap.canvas.width / 2, glMap.canvas.height);
-      // glMap.clearColor(0.25, 0.25, 0.25, 1);
-      // glMap.clear(glMap.COLOR_BUFFER_BIT);
 
       //draw on right viewpoert
       gl.viewport(gl.canvas.width / 2, 0, gl.canvas.width / 2, gl.canvas.height);
       gl.scissor(gl.canvas.width / 2, 0, gl.canvas.width / 2, gl.canvas.height);
-      // gl.clearColor(0.25, 0.25, 0.25, 1);
-      // gl.clear(gl.COLOR_BUFFER_BIT);
       var threeDColorUniformLocation = gl.getUniformLocation(program3D, "u_color");
       gl.uniform4f(threeDColorUniformLocation, 0.5, 0, 0, 1); // Set ray color to cyan
-      // gl3D.useProgram(program3D);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([r * 0.1 + 1, lineO, r * 0.1 + 0, lineH + lineO]), gl.STATIC_DRAW);
+
+      const spacing = 0.00833
+      // r = Utils.xDeviceToNormalized(r);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([r * spacing - 1, Utils.xDeviceToNormalized(lineO), r * spacing - 1, Utils.xDeviceToNormalized(lineH) + Utils.xDeviceToNormalized(lineO)]), gl.STATIC_DRAW);
       gl.drawArrays(gl.LINES, 0, 2);
   
-      ra += DR;
+      ra += DR/4;
 
       if (ra < 0) {
         ra += 2 * PI;
