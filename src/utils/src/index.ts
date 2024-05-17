@@ -87,7 +87,7 @@ export class Utils {
 
     var distT = 0;
 
-    ra = playerAngle - (DR/4) * 120;
+    ra = playerAngle - (DR/8) * 480;
     gl.useProgram(program);
     var rayColorUniformLocation = gl.getUniformLocation(program, "u_color");
 
@@ -99,7 +99,7 @@ export class Utils {
       ra -= 2 * PI;
     }
 
-    for (let r = 0; r < 240; r++) {
+    for (let r = 0; r < 960; r++) {
 
       gl.viewport(0, 0, gl.canvas.width/2, gl.canvas.height);
 
@@ -243,24 +243,27 @@ export class Utils {
       //       ca -= 2 * PI;
       //   }
 
-      // distT = distT * Math.cos(ca);
+      // distT = distT * Math.cos(ca);a
         
       var lineH = (tileSize * 1280) / distT;
       var lineO = 640 - lineH / 2;
 
+     
 
+
+      
       //draw on right viewpoert
       gl.viewport(gl.canvas.width / 2, 0, gl.canvas.width / 2, gl.canvas.height);
       gl.scissor(gl.canvas.width / 2, 0, gl.canvas.width / 2, gl.canvas.height);
       var threeDColorUniformLocation = gl.getUniformLocation(program3D, "u_color");
       gl.uniform4f(threeDColorUniformLocation, 0.5, 0, 0, 1); // Set ray color to cyan
 
-      const spacing = 0.00833
+      const spacing = 0.002083
       // r = Utils.xDeviceToNormalized(r);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([r * spacing - 1, Utils.xDeviceToNormalized(lineO), r * spacing - 1, Utils.xDeviceToNormalized(lineH) + Utils.xDeviceToNormalized(lineO)]), gl.STATIC_DRAW);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-(r * spacing - 1), Utils.yDeviceToNormalized(lineO), -(r * spacing - 1), Utils.yDeviceToNormalized(lineH +lineO)]), gl.STATIC_DRAW);
       gl.drawArrays(gl.LINES, 0, 2);
   
-      ra += DR/4;
+      ra += DR/8;
 
       if (ra < 0) {
         ra += 2 * PI;
