@@ -1,0 +1,340 @@
+const DR = 0.0174533;
+const PI = Math.PI;
+const PI2 = Math.PI / 2;
+const PI3 = (3 * Math.PI) / 2;
+
+export class Utils {
+  static createShader(gl: WebGLRenderingContext, type: number, source: string) {
+    const shader = gl.createShader(type);
+
+    if (!shader) {
+      throw new Error("Error while creating shader");
+    }
+
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+
+    var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+
+    if (success) {
+      return shader;
+    }
+
+    console.log(gl.getShaderInfoLog(shader));
+    gl.deleteShader(shader);
+  }
+
+  static createProgram(
+    gl: WebGLRenderingContext,
+    vertexShader: WebGLShader,
+    fragmentShader: WebGLShader
+  ) {
+    var program = gl.createProgram();
+
+    if (!program) {
+      throw new Error("Error while creating program");
+    }
+
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+
+    var success = gl.getProgramParameter(program, gl.LINK_STATUS);
+
+    if (success) {
+      return program;
+    }
+
+    console.log(gl.getProgramInfoLog(program));
+    gl.deleteProgram(program);
+  }
+
+  static dist(aX: number, aY: number, bX: number, bY: number) {
+    const c = Math.sqrt((bX - aX) * (bX - aX) + (bY - aY) * (bY - aY)); //pythagorean theorem
+    return c;
+  }
+
+  static drawRays(
+    gl: WebGLRenderingContext,
+    program: WebGLProgram,
+    playerPositionX: number,
+    playerPositionY: number,
+    playerAngle: number,
+    map: number[],
+    mapX: number,
+    mapY: number,
+    tileSize: number
+  ) {
+    var mX: any;
+    var mY: any;
+    var mP: any;
+    var dof: any;
+
+    var rY = 0.0;
+    var rX = 0.0;
+    var ra: any;
+    var xO = 0.0;
+    var yO = 0.0;
+
+    var devRY = 0;
+    var devRX = 0;
+
+    ra = playerAngle - DR * 15;
+
+    var rayColorUniformLocation = gl.getUniformLocation(program, "u_color");
+
+    if (ra < 0) {
+      ra += 2 * PI;
+    }
+
+    if (ra > 2 * PI) {
+      ra -= 2 * PI;
+    }
+
+    for (let r = 0; r < 30; r++) {
+      //Horizontal check
+      playerPositionY = Utils.yNormalizedTodevice(playerPositionY);
+      playerPositionX = Utils.xNormalizedTodevice(playerPositionX);
+
+      dof = 0;
+      const aTan = -1 / Math.tan(-ra);
+
+      if (ra < PI) {
+        //Looking up
+        rY = (((playerPositionY | 0) >> 6) << 6) + tileSize;
+        rX = (playerPositionY - rY) * aTan + playerPositionX;
+        yO = tileSize;
+        xO = -yO * aTan;
+      }
+
+      if (ra > PI) {
+        //Looking down
+        rY = (((playerPositionY | 0) >> 6) << 6) - 0.0001;
+        rX = (playerPositionY - rY) * aTan + playerPositionX;
+        yO = -tileSize;
+        xO = -yO * aTan;
+      }
+
+      while (dof < 8) {
+        mX = (rX | 0) >> 6;
+        mY = (rY | 0) >> 6;
+        mP = mY * mapX + mX;
+
+        if (mP < mapX * mapY && map[mP] === 1) {
+          dof = 8;
+        } else {
+          rX += xO;
+          rY += yO;
+          dof += 1;
+        }
+      }
+
+      devRY = rY;
+      devRX = rX;
+
+      ra += DR;
+
+      if (ra < 0) {
+        ra += 2 * PI;
+      }
+
+      if (ra > 2 * PI) {
+        ra -= 2 * PI;
+      }
+
+      playerPositionX = Utils.xDeviceToNormalized(playerPositionX);
+      playerPositionY = Utils.yDeviceToNormalized(playerPositionY);
+
+      rX = Utils.xDeviceToNormalized(rX);
+      rY = Utils.yDeviceToNormalized(rY);
+
+      gl.uniform4f(rayColorUniformLocation, 0, 1, 0, 1); // Set ray color to cyan
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array([playerPositionX, playerPositionY, rX, rY]),
+        gl.STATIC_DRAW
+      );
+
+      gl.drawArrays(gl.LINES, 0, 2);
+    }
+    return { mX, mY, mP, dof, devRY, devRX, ra, xO, yO };
+  }
+
+  static drawPlayer(
+    gl: WebGLRenderingContext,
+    playerProgram: WebGLProgram,
+    pointerProgram: WebGLProgram,
+    playerPositionX: number,
+    playerPositionY: number,
+    playerDeltaX: number,
+    playerDeltaY: number
+  ) {
+    var playerPositionBuffer = gl.createBuffer();
+
+    var playerPositionAttributeLocation = gl.getAttribLocation(
+      playerProgram,
+      "a_position"
+    );
+    gl.enableVertexAttribArray(playerPositionAttributeLocation);
+    gl.vertexAttribPointer(
+      playerPositionAttributeLocation,
+      2,
+      gl.FLOAT,
+      false,
+      0,
+      0
+    );
+    gl.useProgram(playerProgram);
+
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array([playerPositionX, playerPositionY]),
+      gl.STATIC_DRAW
+    );
+
+    gl.drawArrays(gl.POINTS, 0, 1);
+
+    gl.useProgram(pointerProgram);
+    gl.uniform4f(gl.getUniformLocation(pointerProgram, "u_color"), 1, 1, 0, 1); // Yellow color
+    var lineVertices = [
+      playerPositionX,
+      playerPositionY,
+      playerPositionX - playerDeltaX * 10,
+      playerPositionY - playerDeltaY * 10,
+    ];
+    var lineBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, lineBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array(lineVertices),
+      gl.STATIC_DRAW
+    );
+    var linePositionAttributeLocation = gl.getAttribLocation(
+      pointerProgram,
+      "a_position"
+    );
+    gl.enableVertexAttribArray(linePositionAttributeLocation);
+    gl.vertexAttribPointer(
+      linePositionAttributeLocation,
+      2,
+      gl.FLOAT,
+      false,
+      0,
+      0
+    );
+    gl.drawArrays(gl.LINES, 0, 2);
+  }
+
+  static drawMap2D(
+    gl: WebGLRenderingContext,
+    program: WebGLProgram,
+    map: number[],
+    mapX: number,
+    mapY: number,
+    tileSize: number
+  ) {
+    var mapPositionAttributeLocation = gl.getAttribLocation(
+      program,
+      "a_position"
+    );
+    gl.enableVertexAttribArray(mapPositionAttributeLocation);
+
+    var mapColorUniformLocation = gl.getUniformLocation(program, "u_color");
+
+    gl.useProgram(program);
+
+    var mapVertices: number[] = [];
+
+    for (var y = 0; y < mapY; y++) {
+      for (var x = 0; x < mapX; x++) {
+        var x0 = x * tileSize - 1;
+        var y0 = 1 - y * tileSize;
+
+        var x1 = (x + 1) * tileSize - 1;
+        var y1 = 1 - (y + 1) * tileSize;
+
+        if (map[y * mapX + x] === 1) {
+          mapVertices.push(x0, y0, x1, y0, x1, y1, x0, y1);
+        }
+      }
+    }
+
+    var mapVertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, mapVertexBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array(mapVertices),
+      gl.STATIC_DRAW
+    );
+    gl.vertexAttribPointer(
+      mapPositionAttributeLocation,
+      2,
+      gl.FLOAT,
+      false,
+      0,
+      0
+    );
+
+    gl.uniform4f(mapColorUniformLocation, 0.5, 0.5, 0.5, 1);
+    for (var i = 0; i < mapVertices.length / 8; i++) {
+      gl.drawArrays(gl.TRIANGLE_FAN, i * 4, 4);
+    }
+  }
+
+  static updatePosition(
+    keys: any,
+    playerAngle: number,
+    playerPositionX: number,
+    playerPositionY: number,
+    playerDeltaX: number,
+    playerDeltaY: number
+  ) {
+    if (keys["d"]) {
+      playerAngle -= 0.025;
+
+      if (playerAngle < 0) {
+        playerAngle += 2 * PI;
+      }
+
+      playerDeltaX = Math.cos(playerAngle) * 0.05;
+      playerDeltaY = Math.sin(playerAngle) * 0.05;
+    }
+
+    if (keys["a"]) {
+      playerAngle += 0.05;
+
+      if (playerAngle > 2 * PI) {
+        playerAngle -= 2 * PI;
+      }
+
+      playerDeltaX = Math.cos(playerAngle) * 0.05;
+      playerDeltaY = Math.sin(playerAngle) * 0.05;
+    }
+
+    if (keys["w"]) {
+      playerPositionX += playerDeltaX;
+      playerPositionY += playerDeltaY;
+    }
+
+    if (keys["s"]) {
+      playerPositionX -= playerDeltaX;
+      playerPositionY -= playerDeltaY;
+    }
+  }
+
+  static xNormalizedTodevice(x: number) {
+    return 256 * (x + 1);
+  }
+
+  static xDeviceToNormalized(x: number) {
+    return (1 / 256) * x - 1;
+  }
+
+  static yNormalizedTodevice(y: number) {
+    return -256 * (y - 1);
+  }
+
+  static yDeviceToNormalized(y: number) {
+    return (-1 / 256) * y + 1;
+  }
+}
