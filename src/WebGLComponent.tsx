@@ -10,8 +10,8 @@ const WebGLComponent: React.FC = () => {
 //   var playerDeltaX = 0.0005;
 //   var playerDeltaY = 0.0005;
 var mX: number = 0, mY: number = 0, mP: number = 0, dof: number = 0, rY: number = 0, rX: number = 0, ra: number = 0, xO: number = 0, yO: number = 0
-var    playerDeltaX = Math.cos(playerAngle) * 5;
-var playerDeltaY = Math.sin(playerAngle) * 5;
+var    playerDeltaX = Math.cos(playerAngle) * 0.0125;
+var playerDeltaY = Math.sin(playerAngle) * 0.0125;
   const canvasMapRef = useRef<HTMLCanvasElement>(null);
 //   const canvas3DRef = useRef<HTMLCanvasElement>(null);
 
@@ -32,8 +32,8 @@ var playerDeltaY = Math.sin(playerAngle) * 5;
           playerAngle += 2 * PI;
         }
   
-        playerDeltaX = Math.cos(playerAngle) * 0.005;
-        playerDeltaY = Math.sin(playerAngle) * 0.005;
+        playerDeltaX = Math.cos(playerAngle) * 0.0125;
+        playerDeltaY = Math.sin(playerAngle) * 0.0125;
 
         setPlayerPosition({ x: playerPositionX, y: playerPositionY, a: playerAngle });
 
@@ -46,8 +46,8 @@ var playerDeltaY = Math.sin(playerAngle) * 5;
           playerAngle -= 2 * PI;
         }
   
-        playerDeltaX = Math.cos(playerAngle) * 0.005;
-        playerDeltaY = Math.sin(playerAngle) * 0.005;
+        playerDeltaX = Math.cos(playerAngle) * 0.0125;
+        playerDeltaY = Math.sin(playerAngle) * 0.0125;
 
         setPlayerPosition({ x: playerPositionX, y: playerPositionY, a: playerAngle });
 
@@ -69,7 +69,7 @@ var playerDeltaY = Math.sin(playerAngle) * 5;
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+    //   window.removeEventListener("keydown", handleKeyDown);
     };
   }, []); 
 

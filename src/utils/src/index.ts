@@ -87,7 +87,7 @@ export class Utils {
 
     var distT = 0;
 
-    ra = playerAngle - (DR/8) * 480;
+    ra = playerAngle - (DR/4) * 120;
     gl.useProgram(program);
     var rayColorUniformLocation = gl.getUniformLocation(program, "u_color");
 
@@ -99,7 +99,7 @@ export class Utils {
       ra -= 2 * PI;
     }
 
-    for (let r = 0; r < 960; r++) {
+    for (let r = 0; r < 240; r++) {
 
       gl.viewport(0, 0, gl.canvas.width/2, gl.canvas.height);
 
@@ -233,17 +233,17 @@ export class Utils {
 
         //Draw 3D Walls
         //Fix fisheye distortion
-      //   var ca = playerAngle - ra;
+        var ca = playerAngle - ra;
         
-      //   if (ca < 0) {
-      //       ca += 2 * PI; 
-      //   }
+        if (ca < 0) {
+            ca += 2 * PI; 
+        }
 
-      //   if (ca > 2 * PI) {
-      //       ca -= 2 * PI;
-      //   }
+        if (ca > 2 * PI) {
+            ca -= 2 * PI;
+        }
 
-      // distT = distT * Math.cos(ca);a
+      distT = distT * Math.cos(ca);
         
       var lineH = (tileSize * 1280) / distT;
       var lineO = 640 - lineH / 2;
@@ -256,14 +256,36 @@ export class Utils {
       gl.viewport(gl.canvas.width / 2, 0, gl.canvas.width / 2, gl.canvas.height);
       gl.scissor(gl.canvas.width / 2, 0, gl.canvas.width / 2, gl.canvas.height);
       var threeDColorUniformLocation = gl.getUniformLocation(program3D, "u_color");
-      gl.uniform4f(threeDColorUniformLocation, 0.5, 0, 0, 1); // Set ray color to cyan
+      gl.uniform4f(threeDColorUniformLocation, 0.5, 0, 0, 1); // Set ray color to cyandd
 
-      const spacing = 0.002083
+      const spacing = 0.01744 /2
       // r = Utils.xDeviceToNormalized(r);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-(r * spacing - 1), Utils.yDeviceToNormalized(lineO), -(r * spacing - 1), Utils.yDeviceToNormalized(lineH +lineO)]), gl.STATIC_DRAW);
-      gl.drawArrays(gl.LINES, 0, 2);
+      // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-(r * spacing - 1), Utils.yDeviceToNormalized(lineO), -(r * spacing - 1), Utils.yDeviceToNormalized(lineH +lineO)]), gl.STATIC_DRAW);
+      // gl.lineWidth(0.99);
+      // gl.drawArrays(gl.LINES, 0, 2);
   
-      ra += DR/8;
+      let x0 = -(r * spacing - 1);
+      let y0 = Utils.yDeviceToNormalized(lineO);
+      let x1 = x0 + spacing;
+      let y1 = Utils.yDeviceToNormalized(lineH +lineO);
+
+      // var mapVertexBuffer = gl.createBuffer();
+      // gl.bindBuffer(gl.ARRAY_BUFFER, mapVertexBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([x0, y0, x1, y0, x1, y1, x0, y1]), gl.STATIC_DRAW);
+      // mapVertices.push(x0, y0, x1, y0, x1, y1, x0, y1);
+
+      // gl.vertexAttribPointer(mapPositionAttributeLocation,2,gl.FLOAT,false,0,0);
+  
+  
+      // gl.uniform4f(mapColorUniformLocation, 0.5, 0.5, 0.5, 1);
+  
+
+      gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+      
+
+
+
+      ra += DR/4;
 
       if (ra < 0) {
         ra += 2 * PI;
@@ -421,14 +443,14 @@ export class Utils {
     playerDeltaY: number
   ) {
     if (keys["d"]) {
-      playerAngle -= 0.025;
+      playerAngle -= 0.05;
 
       if (playerAngle < 0) {
         playerAngle += 2 * PI;
       }
 
-      playerDeltaX = Math.cos(playerAngle) * 0.05;
-      playerDeltaY = Math.sin(playerAngle) * 0.05;
+      playerDeltaX = Math.cos(playerAngle) * 5;
+      playerDeltaY = Math.sin(playerAngle) * 5;
     }
 
     if (keys["a"]) {
@@ -438,8 +460,8 @@ export class Utils {
         playerAngle -= 2 * PI;
       }
 
-      playerDeltaX = Math.cos(playerAngle) * 0.05;
-      playerDeltaY = Math.sin(playerAngle) * 0.05;
+      playerDeltaX = Math.cos(playerAngle) * 5;
+      playerDeltaY = Math.sin(playerAngle) * 5;
     }
 
     if (keys["w"]) {
