@@ -52,4 +52,17 @@ export enum ShaderSource {
         gl_FragColor = u_color;
     }
   `,
+  THREED_VERTEX = `
+  attribute vec2 a_position;
+  void main() {
+      gl_Position = vec4(a_position, 0, 1);
+  }
+`,
+THREED_FRAGMENT = `
+  precision mediump float;
+  uniform vec4 u_color;
+  void main() {
+      gl_FragColor = u_color;
+  }
+`,
 }

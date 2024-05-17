@@ -4,6 +4,10 @@ const PI2 = Math.PI / 2;
 const PI3 = (3 * Math.PI) / 2;
 
 export class Utils {
+  static draw3D(gl: WebGLRenderingContext) {
+
+  }
+
   static createShader(gl: WebGLRenderingContext, type: number, source: string) {
     const shader = gl.createShader(type);
 
@@ -56,7 +60,8 @@ export class Utils {
 
   static drawRays(
     gl: WebGLRenderingContext,
-    program: WebGLProgram,
+    program: WebGLProgram,    
+    program3D: WebGLProgram,
     playerPositionX: number,
     playerPositionY: number,
     playerAngle: number,
@@ -65,6 +70,7 @@ export class Utils {
     mapY: number,
     tileSize: number
   ) {
+
     var mX: any;
     var mY: any;
     var mP: any;
@@ -94,6 +100,9 @@ export class Utils {
     }
 
     for (let r = 0; r < 30; r++) {
+
+      gl.viewport(0, 0, gl.canvas.width/2, gl.canvas.height);
+
       //Horizontal check
       playerPositionY = Utils.yNormalizedTodevice(playerPositionY);
       playerPositionX = Utils.xNormalizedTodevice(playerPositionX);
@@ -209,6 +218,62 @@ export class Utils {
       devRY = rY;
       devRX = rX;
 
+      playerPositionX = Utils.xDeviceToNormalized(playerPositionX);
+      playerPositionY = Utils.yDeviceToNormalized(playerPositionY);
+      rX = Utils.xDeviceToNormalized(rX);
+      rY = Utils.yDeviceToNormalized(rY);
+
+      //draw on left viewport
+      gl.viewport(0, 0, gl.canvas.width / 2, gl.canvas.height);
+      gl.scissor(0, 0, gl.canvas.width / 2, gl.canvas.height);
+      // gl.clearColor(0.25, 0.25, 0.25, 1);
+      // gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([playerPositionX, playerPositionY, rX, rY]), gl.STATIC_DRAW);
+      gl.drawArrays(gl.LINES, 0, 2);
+
+        //Draw 3D Walls
+        //Fix fisheye distortion
+        var ca = playerAngle - ra;
+        
+        if (ca < 0) {
+            ca += 2 * PI; 
+        }
+
+        if (ca > 2 * PI) {
+            ca -= 2 * PI;
+        }
+
+      distT = distT * Math.cos(ca);
+        
+      var lineH = (tileSize * 1280) / distT;
+      var lineO = 640 - lineH / 2;
+      // glMap.enable(glMap.SCISSOR_TEST);
+
+      // First viewport: left half
+  
+      
+      // Second viewport: right half
+      // glMap.viewport(glMap.canvas.width / 2, 0, glMap.canvas.width / 2, glMap.canvas.height);
+      // glMap.scissor(glMap.canvas.width / 2, 0, glMap.canvas.width / 2, glMap.canvas.height);
+      // glMap.clearColor(0.25, 0.25, 0.25, 1);
+      // glMap.clear(glMap.COLOR_BUFFER_BIT);
+  
+      // glMap.viewport(0, 0, glMap.canvas.width / 2, glMap.canvas.height);
+      // glMap.scissor(0, 0, glMap.canvas.width / 2, glMap.canvas.height);
+      // glMap.clearColor(0.25, 0.25, 0.25, 1);
+      // glMap.clear(glMap.COLOR_BUFFER_BIT);
+
+      //draw on right viewpoert
+      gl.viewport(gl.canvas.width / 2, 0, gl.canvas.width / 2, gl.canvas.height);
+      gl.scissor(gl.canvas.width / 2, 0, gl.canvas.width / 2, gl.canvas.height);
+      // gl.clearColor(0.25, 0.25, 0.25, 1);
+      // gl.clear(gl.COLOR_BUFFER_BIT);
+      var threeDColorUniformLocation = gl.getUniformLocation(program3D, "u_color");
+      gl.uniform4f(threeDColorUniformLocation, 0.5, 0, 0, 1); // Set ray color to cyan
+      // gl3D.useProgram(program3D);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([r * 0.1 + 1, lineO, r * 0.1 + 0, lineH + lineO]), gl.STATIC_DRAW);
+      gl.drawArrays(gl.LINES, 0, 2);
+  
       ra += DR;
 
       if (ra < 0) {
@@ -219,19 +284,7 @@ export class Utils {
         ra -= 2 * PI;
       }
 
-      playerPositionX = Utils.xDeviceToNormalized(playerPositionX);
-      playerPositionY = Utils.yDeviceToNormalized(playerPositionY);
 
-      rX = Utils.xDeviceToNormalized(rX);
-      rY = Utils.yDeviceToNormalized(rY);
-
-      gl.bufferData(
-        gl.ARRAY_BUFFER,
-        new Float32Array([playerPositionX, playerPositionY, rX, rY]),
-        gl.STATIC_DRAW
-      );
-
-      gl.drawArrays(gl.LINES, 0, 2);
     }
     return { mX, mY, mP, dof, devRY, devRX, ra, xO, yO };
   }
@@ -261,7 +314,11 @@ export class Utils {
       0
     );
     gl.useProgram(playerProgram);
-
+      //draw on left viewport
+      gl.viewport(0, 0, gl.canvas.width / 2, gl.canvas.height);
+      gl.scissor(0, 0, gl.canvas.width / 2, gl.canvas.height);
+      // gl.clearColor(0.25, 0.25, 0.25, 1);
+      // gl.clear(gl.COLOR_BUFFER_BIT);
     gl.bufferData(
       gl.ARRAY_BUFFER,
       new Float32Array([playerPositionX, playerPositionY]),
@@ -321,6 +378,7 @@ export class Utils {
 
     var mapVertices: number[] = [];
 
+  
     for (var y = 0; y < mapY; y++) {
       for (var x = 0; x < mapX; x++) {
         var x0 = x * tileSize - 1;
@@ -351,7 +409,15 @@ export class Utils {
       0
     );
 
+
     gl.uniform4f(mapColorUniformLocation, 0.5, 0.5, 0.5, 1);
+
+    //draw on left viewport
+    gl.viewport(0, 0, gl.canvas.width / 2, gl.canvas.height);
+    gl.scissor(0, 0, gl.canvas.width / 2, gl.canvas.height);
+    gl.clearColor(0.25, 0.25, 0.25, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
     for (var i = 0; i < mapVertices.length / 8; i++) {
       gl.drawArrays(gl.TRIANGLE_FAN, i * 4, 4);
     }

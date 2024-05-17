@@ -12,7 +12,9 @@ const WebGLComponent: React.FC = () => {
 var mX: number = 0, mY: number = 0, mP: number = 0, dof: number = 0, rY: number = 0, rX: number = 0, ra: number = 0, xO: number = 0, yO: number = 0
 var    playerDeltaX = Math.cos(playerAngle) * 5;
 var playerDeltaY = Math.sin(playerAngle) * 5;
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasMapRef = useRef<HTMLCanvasElement>(null);
+//   const canvas3DRef = useRef<HTMLCanvasElement>(null);
+
   const [playerPosition, setPlayerPosition] = useState({ x: playerPositionX, y: playerPositionY, a: playerAngle });
   const [info, setData] = useState({a: mX, b:mY, c:mP, d:dof, e:rY, f:rX, g:ra, h:xO, i:yO })
 
@@ -74,41 +76,64 @@ var playerDeltaY = Math.sin(playerAngle) * 5;
 
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    canvas.width = window.innerHeight;
-    canvas.height = window.innerHeight;
+    const canvasMap = canvasMapRef.current;
+    if (!canvasMap) return;
+    canvasMap.width = 2 * window.innerHeight;
+    canvasMap.height = window.innerHeight;
 
-    const gl = canvas.getContext("webgl");
+    const glMap = canvasMap.getContext("webgl");
 
-    if (!gl) {
+    if (!glMap) {
       alert("Unable to initialize WebGL. Your browser may not support it.");
       return;
     }
 
-    gl.clearColor(0.3, 0.3, 0.3, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    // glMap.clearColor(0.3, 0.3, 0.3, 1);
 
-    const rayVertexShader = Utils.createShader(gl, gl.VERTEX_SHADER, ShaderSource.RAY_VERTEX);
-    const rayFragmentShader = Utils.createShader(gl, gl.FRAGMENT_SHADER, ShaderSource.RAY_FRAGMENT);
+
+    const rayVertexShader = Utils.createShader(glMap, glMap.VERTEX_SHADER, ShaderSource.RAY_VERTEX);
+    const rayFragmentShader = Utils.createShader(glMap, glMap.FRAGMENT_SHADER, ShaderSource.RAY_FRAGMENT);
     if (!rayVertexShader || !rayFragmentShader) throw new Error("Error while creating ray shader");
-    const rayProgram = Utils.createProgram(gl, rayVertexShader, rayFragmentShader);
+    const rayProgram = Utils.createProgram(glMap, rayVertexShader, rayFragmentShader);
 
-    const mapVertexShader = Utils.createShader(gl, gl.VERTEX_SHADER, ShaderSource.MAP_VERTEX);
-    const mapFragmentShader = Utils.createShader(gl, gl.FRAGMENT_SHADER, ShaderSource.MAP_FRAGMENT);
+    const mapVertexShader = Utils.createShader(glMap, glMap.VERTEX_SHADER, ShaderSource.MAP_VERTEX);
+    const mapFragmentShader = Utils.createShader(glMap, glMap.FRAGMENT_SHADER, ShaderSource.MAP_FRAGMENT);
     if (!mapVertexShader || !mapFragmentShader) throw new Error("Error while creating map shader");
-    const mapProgram = Utils.createProgram(gl, mapVertexShader, mapFragmentShader);
+    const mapProgram = Utils.createProgram(glMap, mapVertexShader, mapFragmentShader);
 
-    const playerVertexShader = Utils.createShader(gl, gl.VERTEX_SHADER, ShaderSource.PLAYER_VERTEX);
-    const playerFragmentShader = Utils.createShader(gl, gl.FRAGMENT_SHADER, ShaderSource.PLAYER_FRAGMENT);
+    const playerVertexShader = Utils.createShader(glMap, glMap.VERTEX_SHADER, ShaderSource.PLAYER_VERTEX);
+    const playerFragmentShader = Utils.createShader(glMap, glMap.FRAGMENT_SHADER, ShaderSource.PLAYER_FRAGMENT);
     if (!playerVertexShader || !playerFragmentShader) throw new Error("Error while creating player shader");
-    const playerProgram = Utils.createProgram(gl, playerVertexShader, playerFragmentShader);
+    const playerProgram = Utils.createProgram(glMap, playerVertexShader, playerFragmentShader);
 
-    const pointerVertexShader = Utils.createShader(gl, gl.VERTEX_SHADER, ShaderSource.POINTER_VERTEX);
-    const pointerFragmentShader = Utils.createShader(gl, gl.FRAGMENT_SHADER, ShaderSource.POINTER_FRAGMENT);
+    const pointerVertexShader = Utils.createShader(glMap, glMap.VERTEX_SHADER, ShaderSource.POINTER_VERTEX);
+    const pointerFragmentShader = Utils.createShader(glMap, glMap.FRAGMENT_SHADER, ShaderSource.POINTER_FRAGMENT);
     if (!pointerVertexShader || !pointerFragmentShader) throw new Error("Error while creting pointer shader");
-    const pointerProgram = Utils.createProgram(gl, pointerVertexShader, pointerFragmentShader);
+    const pointerProgram = Utils.createProgram(glMap, pointerVertexShader, pointerFragmentShader);
 
+
+
+
+    // const canvas3D = canvas3DRef.current;
+    // if (!canvas3D) return;
+    // canvas3D.width = window.innerHeight;
+    // canvas3D.height = window.innerHeight;
+    // // canvas3D.style.left = canvasMap.width.toString() + " px";
+
+    // const gl3D = canvasMap.getContext("webgl");
+
+    // if (!gl3D) {
+    //   alert("Unable to initialize WebGL for 3D projection. Your browser may not support it.");
+    //   return;
+    // }
+
+    // gl3D.clearColor(0.3, 0.3, 0.3, 1);
+    // gl3D.clear(gl3D.COLOR_BUFFER_BIT);
+
+    const threeDVertexShader = Utils.createShader(glMap, glMap.VERTEX_SHADER, ShaderSource.THREED_VERTEX);
+    const threeDFragmentShader = Utils.createShader(glMap, glMap.FRAGMENT_SHADER, ShaderSource.THREED_FRAGMENT);
+    if (!threeDVertexShader || !threeDFragmentShader) throw new Error("Error while creting pointer shader");
+    const threeDProgram = Utils.createProgram(glMap, pointerVertexShader, pointerFragmentShader);
     // map data
 
     var mapX = 20;
@@ -159,23 +184,38 @@ var playerDeltaY = Math.sin(playerAngle) * 5;
 
 
     function render() {
-      if (!gl) throw new Error("gl is null or underfined.");
+      if (!glMap) throw new Error("glMap is null or underfined.");
+    //   if (!gl3D) throw new Error("glMap is null or underfined.");
 
-      gl.clear(gl.COLOR_BUFFER_BIT);
+    glMap.enable(glMap.SCISSOR_TEST);
+
+    // First viewport: left half
+    glMap.viewport(glMap.canvas.width / 2, 0, glMap.canvas.width / 2, glMap.canvas.height);
+    glMap.scissor(glMap.canvas.width / 2, 0, glMap.canvas.width / 2, glMap.canvas.height);
+    glMap.clearColor(0.25, 0.25, 0.25, 1);
+    glMap.clear(glMap.COLOR_BUFFER_BIT);
+    
+    // Second viewport: right half
+    glMap.viewport(0, 0, glMap.canvas.width / 2, glMap.canvas.height);
+    glMap.scissor(0, 0, glMap.canvas.width / 2, glMap.canvas.height);
+    glMap.clearColor(0.25, 0.25, 0.25, 1);
+    glMap.clear(glMap.COLOR_BUFFER_BIT);
 
       if (!mapProgram) throw new Error("Error while creating map program");
-      Utils.drawMap2D(gl, mapProgram, map, mapX, mapY, tileSizeNormal);
+      Utils.drawMap2D(glMap, mapProgram, map, mapX, mapY, tileSizeNormal);
 
       if (!rayProgram) throw new Error("Error while creating ray program");
-    
-     const a =  Utils.drawRays(gl, rayProgram, playerPositionX, playerPositionY, playerAngle, map, mapX, mapY, tileSizeDevice);
+      if (!threeDProgram) throw new Error("Error while creating 3D program")
+
+     const a =  Utils.drawRays(glMap, rayProgram, threeDProgram, playerPositionX, playerPositionY, playerAngle, map, mapX, mapY, tileSizeDevice);
 
      setData({ a:a.mX, b:a.mY, c:a.mP, d:a.dof, e:a.devRY, f:a.devRX, g:a.ra, h:a.xO, i:a.yO});
 
 
       if (!playerProgram || !pointerProgram) throw new Error("Error while creating player/pointer program");
-      Utils.drawPlayer(gl, playerProgram, pointerProgram, playerPositionX, playerPositionY, playerDeltaX, playerDeltaY);
-      
+
+      Utils.drawPlayer(glMap, playerProgram, pointerProgram, playerPositionX, playerPositionY, playerDeltaX, playerDeltaY);
+
 
       requestAnimationFrame(render);
     }
@@ -196,7 +236,9 @@ var playerDeltaY = Math.sin(playerAngle) * 5;
 
 
 
-  <canvas ref={canvasRef}></canvas>
+  <canvas ref={canvasMapRef}></canvas>
+  {/* <canvas style={{left: canvasMapRef.current?.width}} ref={canvas3DRef}></canvas> */}
+
 </div>;
 };
 
