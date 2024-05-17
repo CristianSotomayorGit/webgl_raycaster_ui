@@ -79,8 +79,10 @@ export class Utils {
     var devRY = 0;
     var devRX = 0;
 
-    ra = playerAngle - DR * 15;
+    var distT = 0;
 
+    ra = playerAngle - DR * 15;
+    gl.useProgram(program);
     var rayColorUniformLocation = gl.getUniformLocation(program, "u_color");
 
     if (ra < 0) {
@@ -97,6 +99,11 @@ export class Utils {
       playerPositionX = Utils.xNormalizedTodevice(playerPositionX);
 
       dof = 0;
+
+      var disH = 1000000;
+      var hX = playerPositionX;
+      var hY = playerPositionY;
+
       const aTan = -1 / Math.tan(-ra);
 
       if (ra < PI) {
@@ -121,12 +128,82 @@ export class Utils {
         mP = mY * mapX + mX;
 
         if (mP < mapX * mapY && map[mP] === 1) {
+          hX = rX;
+          hY = rY;
+          disH = this.dist(playerPositionX, playerPositionY, hX, hY);
+
           dof = 8;
         } else {
           rX += xO;
           rY += yO;
           dof += 1;
         }
+      }
+
+      // Vertical Line check
+
+      dof = 0;
+
+      var disV = 1000000;
+      var vX = playerPositionX;
+      var vY = playerPositionY;
+      var nTan= -Math.tan(-ra);
+      
+      if (ra < PI2 || ra > PI3) {
+          rX = (((playerPositionX | 0) >>6) <<6) - 0.0001;
+          rY = (playerPositionX - rX) * nTan + playerPositionY;
+          xO = -tileSize;
+          yO = -xO * nTan;
+      }
+
+      if (ra > PI2 && ra < PI3) {
+          rX = (((playerPositionX | 0) >>6) <<6) + tileSize;
+          rY = (playerPositionX - rX) * nTan + playerPositionY;
+          xO = tileSize;
+          yO = -xO * nTan;
+      }
+      
+      if (ra == 0 || ra == PI) {
+          rX = playerPositionX;
+          rY = playerPositionY;
+          dof = 8;
+      }
+      
+      while (dof < 8) {
+          mX = (rX | 0) >> 6;
+          mY = (rY | 0) >> 6;
+          mP = mY * mapX + mX;
+
+          if (mP > 0 && mP < mapX * mapY && map[mP] == 1) {
+              vX = rX;
+              vY = rY;
+              disV = this.dist(playerPositionX, playerPositionY, vX, vY);
+              dof = 8;
+          }
+
+          else {
+              rX += xO;
+              rY += yO;
+              dof += 1;
+          } 
+      }
+
+      if (disV < disH) {
+          rX = vX;
+          rY = vY;
+          distT = disV;
+          // glColor3f(1, 0, 0);
+          gl.uniform4f(rayColorUniformLocation, 1, 0, 0, 1); // Set ray color to cyan
+
+      }
+
+      if (disH < disV) {
+          rX = hX;
+          rY = hY;
+          distT = disH;
+          // glColor3f(0.5, 0, 0);
+          gl.uniform4f(rayColorUniformLocation, 0.5, 0, 0, 1); // Set ray color to cyan
+
       }
 
       devRY = rY;
@@ -148,7 +225,6 @@ export class Utils {
       rX = Utils.xDeviceToNormalized(rX);
       rY = Utils.yDeviceToNormalized(rY);
 
-      gl.uniform4f(rayColorUniformLocation, 0, 1, 0, 1); // Set ray color to cyan
       gl.bufferData(
         gl.ARRAY_BUFFER,
         new Float32Array([playerPositionX, playerPositionY, rX, rY]),
@@ -323,18 +399,18 @@ export class Utils {
   }
 
   static xNormalizedTodevice(x: number) {
-    return 256 * (x + 1);
+    return 640 * (x + 1);
   }
 
   static xDeviceToNormalized(x: number) {
-    return (1 / 256) * x - 1;
+    return (1 / 640) * x - 1;
   }
 
   static yNormalizedTodevice(y: number) {
-    return -256 * (y - 1);
+    return -640 * (y - 1);
   }
 
   static yDeviceToNormalized(y: number) {
-    return (-1 / 256) * y + 1;
+    return (-1 / 640) * y + 1;
   }
 }
