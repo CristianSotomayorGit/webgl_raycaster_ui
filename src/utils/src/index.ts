@@ -4,16 +4,10 @@ const PI2 = Math.PI / 2;
 const PI3 = (3 * Math.PI) / 2;
 
 export class Utils {
-  static draw3D(gl: WebGLRenderingContext) {
-
-  }
-
   static createShader(gl: WebGLRenderingContext, type: number, source: string) {
     const shader = gl.createShader(type);
 
-    if (!shader) {
-      throw new Error("Error while creating shader");
-    }
+    if (!shader) throw new Error("Error while creating shader");
 
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
@@ -54,13 +48,13 @@ export class Utils {
   }
 
   static dist(aX: number, aY: number, bX: number, bY: number) {
-    const c = Math.sqrt((bX - aX) * (bX - aX) + (bY - aY) * (bY - aY)); //pythagorean theorem
+    const c = Math.sqrt((bX - aX) * (bX - aX) + (bY - aY) * (bY - aY));
     return c;
   }
 
   static drawRays(
     gl: WebGLRenderingContext,
-    program: WebGLProgram,    
+    program: WebGLProgram,
     program3D: WebGLProgram,
     playerPositionX: number,
     playerPositionY: number,
@@ -70,7 +64,6 @@ export class Utils {
     mapY: number,
     tileSize: number
   ) {
-
     var mX: any;
     var mY: any;
     var mP: any;
@@ -82,12 +75,11 @@ export class Utils {
     var xO = 0.0;
     var yO = 0.0;
 
-    var devRY = 0;
-    var devRX = 0;
-
     var distT = 0;
 
-    ra = playerAngle - (DR/4) * 120;
+    let rays = 180;
+
+    ra = playerAngle - (DR/2) * rays/2;
     gl.useProgram(program);
     var rayColorUniformLocation = gl.getUniformLocation(program, "u_color");
 
@@ -99,9 +91,8 @@ export class Utils {
       ra -= 2 * PI;
     }
 
-    for (let r = 0; r < 240; r++) {
-
-      gl.viewport(0, 0, gl.canvas.width/2, gl.canvas.height);
+    for (let r = 0; r < rays; r++) {
+      // gl.viewport(0, 0, gl.canvas.width / 2, gl.canvas.height);
 
       //Horizontal check
       playerPositionY = Utils.yNormalizedTodevice(playerPositionY);
@@ -156,67 +147,58 @@ export class Utils {
       var disV = 1000000;
       var vX = playerPositionX;
       var vY = playerPositionY;
-      var nTan= -Math.tan(-ra);
-      
+      var nTan = -Math.tan(-ra);
+
       if (ra < PI2 || ra > PI3) {
-          rX = (((playerPositionX | 0) >>6) <<6) - 0.0001;
-          rY = (playerPositionX - rX) * nTan + playerPositionY;
-          xO = -tileSize;
-          yO = -xO * nTan;
+        rX = (((playerPositionX | 0) >> 6) << 6) - 0.0001;
+        rY = (playerPositionX - rX) * nTan + playerPositionY;
+        xO = -tileSize;
+        yO = -xO * nTan;
       }
 
       if (ra > PI2 && ra < PI3) {
-          rX = (((playerPositionX | 0) >>6) <<6) + tileSize;
-          rY = (playerPositionX - rX) * nTan + playerPositionY;
-          xO = tileSize;
-          yO = -xO * nTan;
+        rX = (((playerPositionX | 0) >> 6) << 6) + tileSize;
+        rY = (playerPositionX - rX) * nTan + playerPositionY;
+        xO = tileSize;
+        yO = -xO * nTan;
       }
-      
-      if (ra == 0 || ra == PI) {
-          rX = playerPositionX;
-          rY = playerPositionY;
-          dof = 20;
+
+      if (ra === 0 || ra === PI) {
+        rX = playerPositionX;
+        rY = playerPositionY;
+        dof = 20;
       }
-      
+
       while (dof < 20) {
-          mX = (rX | 0) >> 6;
-          mY = (rY | 0) >> 6;
-          mP = mY * mapX + mX;
+        mX = (rX | 0) >> 6;
+        mY = (rY | 0) >> 6;
+        mP = mY * mapX + mX;
 
-          if (mP > 0 && mP < mapX * mapY && map[mP] == 1) {
-              vX = rX;
-              vY = rY;
-              disV = this.dist(playerPositionX, playerPositionY, vX, vY);
-              dof = 20;
-          }
-
-          else {
-              rX += xO;
-              rY += yO;
-              dof += 1;
-          } 
+        if (mP > 0 && mP < mapX * mapY && map[mP] === 1) {
+          vX = rX;
+          vY = rY;
+          disV = this.dist(playerPositionX, playerPositionY, vX, vY);
+          dof = 20;
+        } else {
+          rX += xO;
+          rY += yO;
+          dof += 1;
+        }
       }
 
       if (disV < disH) {
-          rX = vX;
-          rY = vY;
-          distT = disV;
-          // glColor3f(1, 0, 0);
-          gl.uniform4f(rayColorUniformLocation, 1, 0, 0, 1); // Set ray color to cyan
-
+        rX = vX;
+        rY = vY;
+        distT = disV;
+        gl.uniform4f(rayColorUniformLocation, 0.25, 0, 0, 1); // Set ray color to cyan
       }
 
       if (disH < disV) {
-          rX = hX;
-          rY = hY;
-          distT = disH;
-          // glColor3f(0.5, 0, 0);
-          gl.uniform4f(rayColorUniformLocation, 0.5, 0, 0, 1); // Set ray color to cyan
-
+        rX = hX;
+        rY = hY;
+        distT = disH;
+        gl.uniform4f(rayColorUniformLocation, 0.333, 0.420, 0.184, 1); // Set ray color to cyan
       }
-
-      devRY = rY;
-      devRX = rX;
 
       playerPositionX = Utils.xDeviceToNormalized(playerPositionX);
       playerPositionY = Utils.yDeviceToNormalized(playerPositionY);
@@ -224,68 +206,72 @@ export class Utils {
       rY = Utils.yDeviceToNormalized(rY);
 
       //draw on left viewport
-      gl.viewport(0, 0, gl.canvas.width / 2, gl.canvas.height);
-      gl.scissor(0, 0, gl.canvas.width / 2, gl.canvas.height);
+      // gl.viewport(0, 0, gl.canvas.width / 2, gl.canvas.height);
+      // gl.scissor(0, 0, gl.canvas.width / 2, gl.canvas.height);
+      
+      gl.viewport(0, 0, gl.canvas.height/4, gl.canvas.height/4);
+      gl.scissor(0, 0, gl.canvas.height/4, gl.canvas.height/4);
       // gl.clearColor(0.25, 0.25, 0.25, 1);
       // gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([playerPositionX, playerPositionY, rX, rY]), gl.STATIC_DRAW);
+      
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array([playerPositionX, playerPositionY, rX, rY]),
+        gl.STATIC_DRAW
+      );
       gl.drawArrays(gl.LINES, 0, 2);
 
-        //Draw 3D Walls
-        //Fix fisheye distortion
-        var ca = playerAngle - ra;
-        
-        if (ca < 0) {
-            ca += 2 * PI; 
-        }
+      //Draw 3D Walls
+      //Fix fisheye distortion
+      var ca = playerAngle - ra;
+ 
+      if (ca < 0) {
+        ca += 2 * PI;
+      }
 
-        if (ca > 2 * PI) {
-            ca -= 2 * PI;
-        }
+      if (ca > 2 * PI) {
+        ca -= 2 * PI;
+      }
 
       distT = distT * Math.cos(ca);
-        
+
       var lineH = (tileSize * 1280) / distT;
       var lineO = 640 - lineH / 2;
 
-     
-
-
-      
       //draw on right viewpoert
-      gl.viewport(gl.canvas.width / 2, 0, gl.canvas.width / 2, gl.canvas.height);
-      gl.scissor(gl.canvas.width / 2, 0, gl.canvas.width / 2, gl.canvas.height);
-      var threeDColorUniformLocation = gl.getUniformLocation(program3D, "u_color");
+      // gl.viewport(
+      //   gl.canvas.width / 2,
+      //   0,
+      //   gl.canvas.width / 2,
+      //   gl.canvas.height
+      // );
+      // gl.scissor(gl.canvas.width / 2, 0, gl.canvas.width / 2, gl.canvas.height);
+
+      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+      gl.scissor(0, 0, gl.canvas.width, gl.canvas.height);
+
+      var threeDColorUniformLocation = gl.getUniformLocation(
+        program3D,
+        "u_color"
+      );
       gl.uniform4f(threeDColorUniformLocation, 0.5, 0, 0, 1); // Set ray color to cyandd
 
-      const spacing = 0.01744 /2
-      // r = Utils.xDeviceToNormalized(r);
-      // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-(r * spacing - 1), Utils.yDeviceToNormalized(lineO), -(r * spacing - 1), Utils.yDeviceToNormalized(lineH +lineO)]), gl.STATIC_DRAW);
-      // gl.lineWidth(0.99);
-      // gl.drawArrays(gl.LINES, 0, 2);
-  
+      const spacing = 2/rays;
+
       let x0 = -(r * spacing - 1);
       let y0 = Utils.yDeviceToNormalized(lineO);
       let x1 = x0 + spacing;
-      let y1 = Utils.yDeviceToNormalized(lineH +lineO);
+      let y1 = Utils.yDeviceToNormalized(lineH + lineO);
 
-      // var mapVertexBuffer = gl.createBuffer();
-      // gl.bindBuffer(gl.ARRAY_BUFFER, mapVertexBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([x0, y0, x1, y0, x1, y1, x0, y1]), gl.STATIC_DRAW);
-      // mapVertices.push(x0, y0, x1, y0, x1, y1, x0, y1);
-
-      // gl.vertexAttribPointer(mapPositionAttributeLocation,2,gl.FLOAT,false,0,0);
-  
-  
-      // gl.uniform4f(mapColorUniformLocation, 0.5, 0.5, 0.5, 1);
-  
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array([x0, y0, x1, y0, x1, y1, x0, y1]),
+        gl.STATIC_DRAW
+      );
 
       gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
-      
 
-
-
-      ra += DR/4;
+      ra += DR/2 ;
 
       if (ra < 0) {
         ra += 2 * PI;
@@ -294,10 +280,7 @@ export class Utils {
       if (ra > 2 * PI) {
         ra -= 2 * PI;
       }
-
-
     }
-    return { mX, mY, mP, dof, devRY, devRX, ra, xO, yO };
   }
 
   static drawPlayer(
@@ -309,7 +292,6 @@ export class Utils {
     playerDeltaX: number,
     playerDeltaY: number
   ) {
-    var playerPositionBuffer = gl.createBuffer();
 
     var playerPositionAttributeLocation = gl.getAttribLocation(
       playerProgram,
@@ -325,11 +307,15 @@ export class Utils {
       0
     );
     gl.useProgram(playerProgram);
-      //draw on left viewport
-      gl.viewport(0, 0, gl.canvas.width / 2, gl.canvas.height);
-      gl.scissor(0, 0, gl.canvas.width / 2, gl.canvas.height);
-      // gl.clearColor(0.25, 0.25, 0.25, 1);
-      // gl.clear(gl.COLOR_BUFFER_BIT);
+    //draw on left viewport
+    // gl.viewport(0, 0, gl.canvas.width / 2, gl.canvas.height);
+    // gl.scissor(0, 0, gl.canvas.width / 2, gl.canvas.height);
+
+    gl.viewport(0, 0, gl.canvas.height/4, gl.canvas.height/4);
+    gl.scissor(0, 0, gl.canvas.height/4, gl.canvas.height/4);
+    // gl.clearColor(0.25, 0.25, 0.25, 1);
+    // gl.clear(gl.COLOR_BUFFER_BIT);
+
     gl.bufferData(
       gl.ARRAY_BUFFER,
       new Float32Array([playerPositionX, playerPositionY]),
@@ -389,7 +375,6 @@ export class Utils {
 
     var mapVertices: number[] = [];
 
-  
     for (var y = 0; y < mapY; y++) {
       for (var x = 0; x < mapX; x++) {
         var x0 = x * tileSize - 1;
@@ -420,12 +405,16 @@ export class Utils {
       0
     );
 
-
     gl.uniform4f(mapColorUniformLocation, 0.5, 0.5, 0.5, 1);
 
     //draw on left viewport
-    gl.viewport(0, 0, gl.canvas.width / 2, gl.canvas.height);
-    gl.scissor(0, 0, gl.canvas.width / 2, gl.canvas.height);
+    // gl.viewport(0, 0, gl.canvas.width / 2, gl.canvas.height);
+    // gl.scissor(0, 0, gl.canvas.width / 2, gl.canvas.height);
+    // gl.clearColor(0.25, 0.25, 0.25, 1);
+    // gl.clear(gl.COLOR_BUFFER_BIT);
+
+    gl.viewport(0, 0, gl.canvas.height/4, gl.canvas.height/4);
+    gl.scissor(0, 0, gl.canvas.height/4, gl.canvas.height/4);
     gl.clearColor(0.25, 0.25, 0.25, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
