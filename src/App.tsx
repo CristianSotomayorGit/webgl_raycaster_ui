@@ -5,7 +5,6 @@ import WebGLComponent from './WebGLComponent';
 function App() {
   return (
     <div>
-    {/* <KeyPressComponent/> */}
     <WebGLComponent/>
     </div>
   );

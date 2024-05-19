@@ -2,13 +2,20 @@ import React, { useRef, useEffect } from "react";
 import { Utils } from "./utils/src";
 import { ShaderSource } from "./shader/src";
 import "./App.css"; // Import the CSS file
+import { Player, Map } from "./types/src";
 
 const WebGLComponent: React.FC = () => {
-  let playerAngle = (3 * Math.PI) / 4;
-  let playerPositionX = -0.9;
-  let playerPositionY = 0.9;
-  let playerDeltaX = Math.cos(playerAngle) * 0.0025;
-  let playerDeltaY = Math.sin(playerAngle) * 0.0025;
+  let player: Player = {
+    location: { x: -0.9, y: 0.9 },
+    angle: (3 * Math.PI) / 4,
+    depthOfField: 0,
+  };
+
+  // let playerAngle = (3 * Math.PI) / 4;
+  // let playerPositionX = -0.9;
+  // let player.location.y = 0.9;
+  let playerDeltaX = Math.cos(player.angle) * 0.0025;
+  let playerDeltaY = Math.sin(player.angle) * 0.0025;
   const canvasMapRef = useRef<HTMLCanvasElement>(null);
 
   const PI = Math.PI;
@@ -47,9 +54,9 @@ const WebGLComponent: React.FC = () => {
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
-      playerAngle -= event.movementX * 0.005;
-      playerDeltaX = Math.cos(playerAngle) * 0.0025;
-      playerDeltaY = Math.sin(playerAngle) * 0.0025;
+      player.angle -= event.movementX * 0.005;
+      playerDeltaX = Math.cos(player.angle) * 0.0025;
+      playerDeltaY = Math.sin(player.angle) * 0.0025;
     };
 
     const handleClick = () => {
@@ -188,55 +195,55 @@ const WebGLComponent: React.FC = () => {
       threeDFragmentShader
     );
 
-    const mapX = 20;
-    const mapY = 20;
-    const tileSizeNormal = 2.0 / mapX;
-    const tileSizeDevice = 64;
-
-    const map = [
-      0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1,
-      1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1,
-      0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1,
-      0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1,
-      1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0,
-      1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1,
-      0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1,
-      0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1,
-      1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1,
-      1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1,
-      0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1,
-      1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1,
-      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    ];
+    const map: Map = {
+      rows: 20,
+      columns: 20,
+      cellSize: 64,
+      cellSizeNormalized: 2.0 / 20,
+      cells: [
+        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0,
+        1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0,
+        0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1,
+        1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0,
+        0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1,
+        1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1,
+        1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+        1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0,
+        1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1,
+        0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1,
+        1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0,
+        1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      ],
+    };
 
     function updatePlayerPosition() {
       if (keyState.d) {
-        playerPositionX += Math.cos(playerAngle + PI / 2) * 0.0025;
-        playerPositionY += Math.sin(playerAngle + PI / 2) * 0.0025;
+        player.location.x += Math.cos(player.angle + PI / 2) * 0.0025;
+        player.location.y += Math.sin(player.angle + PI / 2) * 0.0025;
       }
 
       if (keyState.a) {
-        playerPositionX += Math.cos(playerAngle - PI / 2) * 0.0025;
-        playerPositionY += Math.sin(playerAngle - PI / 2) * 0.0025;
+        player.location.x += Math.cos(player.angle - PI / 2) * 0.0025;
+        player.location.y += Math.sin(player.angle - PI / 2) * 0.0025;
       }
-
 
       let playerPositionXNormalized =
-        ((Utils.xNormalizedTodevice(playerPositionX) | 0) >> 6) << 6;
+        ((Utils.xNormalizedTodevice(player.location.x) | 0) >> 6) << 6;
       let playerPositionYNormalized =
-        ((Utils.yNormalizedTodevice(playerPositionY) | 0) >> 6) << 6;
+        ((Utils.yNormalizedTodevice(player.location.y) | 0) >> 6) << 6;
 
       if (keyState.w) {
-            playerPositionX -= playerDeltaX;
-            playerPositionY -= playerDeltaY;
-
+        player.location.x -= playerDeltaX;
+        player.location.y -= playerDeltaY;
       }
       if (keyState.s) {
-        playerPositionX += playerDeltaX;
-        playerPositionY += playerDeltaY;
+        player.location.x += playerDeltaX;
+        player.location.y += playerDeltaY;
       }
     }
     function render() {
@@ -272,17 +279,12 @@ const WebGLComponent: React.FC = () => {
         glMap,
         rayProgram,
         threeDProgram,
-        playerPositionX,
-        playerPositionY,
-        playerAngle,
+        player,
         map,
-        mapX,
-        mapY,
-        tileSizeDevice
       );
 
       if (!mapProgram) throw new Error("Error while creating map program");
-      Utils.drawMap2D(glMap, mapProgram, map, mapX, mapY, tileSizeNormal);
+      Utils.drawMap2D(glMap, mapProgram, map);
 
       if (!playerProgram || !pointerProgram)
         throw new Error("Error while creating player/pointer program");
@@ -290,8 +292,7 @@ const WebGLComponent: React.FC = () => {
         glMap,
         playerProgram,
         pointerProgram,
-        playerPositionX,
-        playerPositionY,
+        player,
         playerDeltaX,
         playerDeltaY
       );
