@@ -16,6 +16,7 @@ export interface Ray {
 
 export interface Player {
   location: Point;
+  locationDelta: Point;
   angle: number;
   depthOfField: number;
 }

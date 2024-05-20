@@ -65,16 +65,23 @@ export class Utils {
     const rays = 180;
     let ray: Ray = {x: 0, y: 0, xOffset: 0, yOffset: 0, angle: player.angle - (DR/2) * rays/2}
 
+    //Keep ray from going out of ran 0 -> 2*PI
     if (ray.angle < 0) ray.angle += 2 * PI;
     if (ray.angle > 2 * PI) ray.angle -= 2 * PI;
-    
+
+    //limit drawing to main viewport and set background color
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.scissor(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.clearColor(0.25, 0.25, 0.25, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
     for (let currentRay = 0; currentRay < rays; currentRay++) {
 
       //Translate WebGL normal space coordinates to integer space space coordinates
       player.location.y = Utils.yNormalizedTodevice(player.location.y);
       player.location.x = Utils.xNormalizedTodevice(player.location.x);
 
-      //Horizontal hit check--------------------------------------------
+      //HORIZONTAL HIT CHECK--------------------------------------------
       
       player.depthOfField = 0;
       const aTan = -1 / Math.tan(-ray.angle);
@@ -114,7 +121,7 @@ export class Utils {
         }
       }
 
-      //Horizontal hit check--------------------------------------------
+      //VERTICAL HIT CHECK--------------------------------------------
 
       player.depthOfField = 0;
       const nTan = -Math.tan(-ray.angle);
@@ -160,10 +167,10 @@ export class Utils {
         }
       }
 
-      //Find ray with shortest distance to render-------------------------------------------
+      //FIND RAY WITH SHORTEST LENGTH------------------------------------------
 
-      gl.useProgram(program);
-      const rayColorUniformLocation = gl.getUniformLocation(program, "u_color");
+      gl.useProgram(program3D);
+      const rayColorUniformLocation = gl.getUniformLocation(program3D, "u_color");
 
       let hitDistance = 0;
 
@@ -181,7 +188,7 @@ export class Utils {
         gl.uniform4f(rayColorUniformLocation, 0.333, 0.420, 0.184, 1); 
       }
 
-      //Draw rays on map------------------------------------------------------------------------
+      //DRAW MAP RAYS/3D ILLUSION------------------------------------------------------------------------
 
       //Tranlate integer space coordinates back to WebGL normal space for rendering rays on map
       player.location.x = Utils.xDeviceToNormalized(player.location.x);
@@ -189,17 +196,15 @@ export class Utils {
       ray.x = Utils.xDeviceToNormalized(ray.x);
       ray.y = Utils.yDeviceToNormalized(ray.y);
 
-      //draw rays on map viewport
-      gl.viewport(0, 0, gl.canvas.height/4, gl.canvas.height/4);
-      gl.scissor(0, 0, gl.canvas.height/4, gl.canvas.height/4);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([player.location.x, player.location.y, ray.x, ray.y]), gl.STATIC_DRAW);
-      gl.drawArrays(gl.LINES, 0, 2);
-
-      //Draw 3D wall illusion------------------------------------------------------------------------
+      //draw rays on map viewport (UNCOMMENT CODE FOR MAP RAY DEMO)
+      // gl.viewport(0, 0, gl.canvas.height/4, gl.canvas.height/4);
+      // gl.scissor(0, 0, gl.canvas.height/4, gl.canvas.height/4);
+      // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([player.location.x, player.location.y, ray.x, ray.y]), gl.STATIC_DRAW);
+      // gl.drawArrays(gl.LINES, 0, 2);
 
       //Fix fisheye distortion
       var ca = player.angle - ray.angle;
-      if (ca < 0) ca += 2 * PI;
+      if (ca < 0)      ca += 2 * PI;
       if (ca > 2 * PI) ca -= 2 * PI;
 
       hitDistance = hitDistance * Math.cos(ca);
@@ -209,21 +214,17 @@ export class Utils {
       const rectangleWidth = 2/rays;
       const rectangleOffset = 640 - rectangleHeight / 2;
 
-      //draw on main viewport
-      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-      gl.scissor(0, 0, gl.canvas.width, gl.canvas.height);
-
-      var threeDColorUniformLocation = gl.getUniformLocation(program3D, "u_color");
-      gl.uniform4f(threeDColorUniformLocation, 0.5, 0, 0, 1); 
-
       let x0 = -(currentRay * rectangleWidth - 1);
       let y0 = Utils.yDeviceToNormalized(rectangleOffset);
       let x1 = x0 + rectangleWidth;
       let y1 = Utils.yDeviceToNormalized(rectangleHeight + rectangleOffset);
 
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([x0, y0, x1, y0, x1, y1, x0, y1]), gl.STATIC_DRAW);
-      gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+      //draw 3D walls
+      Utils.createAndFillBufferObject(gl, new Float32Array([x0, y0, x1, y0, x1, y1, x0, y1]));
+      Utils.getAndEnableAttributeLocation(gl, program3D);
 
+      gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+   
       ray.angle += DR/2 ;
 
       if (ray.angle < 0) ray.angle += 2 * PI;
@@ -236,127 +237,79 @@ export class Utils {
     playerProgram: WebGLProgram,
     pointerProgram: WebGLProgram,
     player: Player,
-    playerDeltaX: number,
-    playerDeltaY: number
   ) {
+    //limit drawing to map viewport on bottom left
+    const mapViewportHeight = gl.canvas.height/4;
+    const mapViewportWidth = mapViewportHeight
 
-    var playerPositionAttributeLocation = gl.getAttribLocation(
-      playerProgram,
-      "a_position"
-    );
-    gl.enableVertexAttribArray(playerPositionAttributeLocation);
-    gl.vertexAttribPointer(
-      playerPositionAttributeLocation,
-      2,
-      gl.FLOAT,
-      false,
-      0,
-      0
-    );
+    gl.viewport(0, 0, mapViewportWidth, mapViewportWidth);
+    gl.scissor(0, 0, mapViewportWidth, mapViewportWidth);
+
+    // draw player
     gl.useProgram(playerProgram);
-
-    //draw on left viewport
-    gl.viewport(0, 0, gl.canvas.height/4, gl.canvas.height/4);
-    gl.scissor(0, 0, gl.canvas.height/4, gl.canvas.height/4);
-
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Float32Array([player.location.x, player.location.y]),
-      gl.STATIC_DRAW
-    );
-
+    Utils.createAndFillBufferObject(gl, new Float32Array([player.location.x, player.location.y]))
+    Utils.getAndEnableAttributeLocation(gl,playerProgram);
     gl.drawArrays(gl.POINTS, 0, 1);
 
-    gl.useProgram(pointerProgram);
-    gl.uniform4f(gl.getUniformLocation(pointerProgram, "u_color"), 1, 1, 0, 1); // Yellow color
-    var lineVertices = [
-      player.location.x,
-      player.location.y,
-      player.location.x - playerDeltaX * 10,
-      player.location.y - playerDeltaY * 10,
-    ];
-    var lineBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, lineBuffer);
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Float32Array(lineVertices),
-      gl.STATIC_DRAW
-    );
-    var linePositionAttributeLocation = gl.getAttribLocation(
-      pointerProgram,
-      "a_position"
-    );
-    gl.enableVertexAttribArray(linePositionAttributeLocation);
-    gl.vertexAttribPointer(
-      linePositionAttributeLocation,
-      2,
-      gl.FLOAT,
-      false,
-      0,
-      0
-    );
+    // draw player pointer
+    gl.useProgram(pointerProgram);    
+    Utils.createAndFillBufferObject(gl, new Float32Array([player.location.x, player.location.y, player.location.x - player.locationDelta.x * 20, player.location.y - player.locationDelta.y * 20,]))
+    Utils.getAndEnableAttributeLocation(gl,pointerProgram);
     gl.drawArrays(gl.LINES, 0, 2);
   }
 
-  static drawMap2D(
-    gl: WebGLRenderingContext,
-    program: WebGLProgram,
-    map: Map,
-  ) {
-    var mapPositionAttributeLocation = gl.getAttribLocation(
-      program,
-      "a_position"
-    );
-    gl.enableVertexAttribArray(mapPositionAttributeLocation);
+static drawMap2D(
+  gl: WebGLRenderingContext,
+  program: WebGLProgram,
+  map: Map,
+) {
+  gl.useProgram(program);
 
-    var mapColorUniformLocation = gl.getUniformLocation(program, "u_color");
+  //limit rendering to map viewport on bottom left
+  const viewportSize = gl.canvas.height / 4;
+  gl.viewport(0, 0, viewportSize, viewportSize);
+  gl.scissor(0, 0, viewportSize, viewportSize);
+  gl.clearColor(0.25, 0.25, 0.25, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT);
 
-    gl.useProgram(program);
+  //draw map cells
+  for (let y = 0; y < map.rows; y++) {
+    for (let x = 0; x < map.columns; x++) {
+      if (map.cells[y * map.columns + x] === 1) {
+        const x0 = x * map.cellSizeNormalized - 1;
+        const y0 = 1 - y * map.cellSizeNormalized;
+        const x1 = (x + 1) * map.cellSizeNormalized - 1;
+        const y1 = 1 - (y + 1) * map.cellSizeNormalized;
 
-    var mapVertices: number[] = [];
+        Utils.createAndFillBufferObject(gl, new Float32Array([x0, y0, x1, y0, x1, y1, x0, y1]))
+        Utils.getAndEnableAttributeLocation(gl,program);
 
-    for (var y = 0; y < map.rows; y++) {
-      for (var x = 0; x < map.columns; x++) {
-        var x0 = x * map.cellSizeNormalized - 1;
-        var y0 = 1 - y * map.cellSizeNormalized;
-
-        var x1 = (x + 1) * map.cellSizeNormalized - 1;
-        var y1 = 1 - (y + 1) * map.cellSizeNormalized;
-
-        if (map.cells[y * map.columns + x] === 1) {
-          mapVertices.push(x0, y0, x1, y0, x1, y1, x0, y1);
-        }
+        gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
       }
     }
-
-    var mapVertexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, mapVertexBuffer);
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Float32Array(mapVertices),
-      gl.STATIC_DRAW
-    );
-    gl.vertexAttribPointer(
-      mapPositionAttributeLocation,
-      2,
-      gl.FLOAT,
-      false,
-      0,
-      0
-    );
-
-    gl.uniform4f(mapColorUniformLocation, 0.5, 0.5, 0.5, 1);
-
-    //draw on left viewport
-    gl.viewport(0, 0, gl.canvas.height/4, gl.canvas.height/4);
-    gl.scissor(0, 0, gl.canvas.height/4, gl.canvas.height/4);
-    gl.clearColor(0.25, 0.25, 0.25, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-
-    for (var i = 0; i < mapVertices.length / 8; i++) {
-      gl.drawArrays(gl.TRIANGLE_FAN, i * 4, 4);
-    }
   }
+}
+
+static createAndFillBufferObject(gl: WebGLRenderingContext, data: Float32Array) {
+
+  // Create a buffer object
+  let bufferId = gl.createBuffer();
+  if (!bufferId) throw new Error('Failed to create the buffer object');
+
+  // Make the buffer object the active buffer.
+  gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
+
+  // Upload the data for this buffer object to the GPU.
+  gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+
+  return bufferId;
+}
+
+static getAndEnableAttributeLocation(gl: WebGLRenderingContext, program: WebGLProgram) {
+  const attributeLocation = gl.getAttribLocation(program, "a_position");
+  if (attributeLocation === -1) throw new Error('failed to get attribute location');
+  gl.enableVertexAttribArray(attributeLocation);
+  gl.vertexAttribPointer(attributeLocation, 2, gl.FLOAT, false, 0, 0);}
 
   static xNormalizedTodevice(x: number) {
     return 640 * (x + 1);
