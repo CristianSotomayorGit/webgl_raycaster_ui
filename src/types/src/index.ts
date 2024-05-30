@@ -19,6 +19,7 @@ export interface Player {
   locationDelta: Point;
   angle: number;
   depthOfField: number;
+  speed: number;
 }
 
 export interface Point {

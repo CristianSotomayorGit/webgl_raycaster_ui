@@ -1,63 +1,111 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useMemo, useState } from "react";
 import { Utils } from "./utils/src";
 import { ShaderSource } from "./shader/src";
 import "./App.css"; // Import the CSS file
 import { Player, Map } from "./types/src";
 
 const WebGLComponent: React.FC = () => {
-
-  //define initial player state
-  const initialAngle = (3 * Math.PI) / 4;
-  const initialDelta = {
-    x: Math.cos(initialAngle) * 0.0025,
-    y: Math.sin(initialAngle) * 0.0025
-  };
-
-  let player: Player = {
+  const [fps, setFps] = useState(0);
+  let lastFrameTime = performance.now();
+  let frameCount = 0;
+//define initial player state
+  const player: Player = useMemo(() => ({
     location: { x: -0.9, y: 0.9 },
     angle: (3 * Math.PI) / 4,
     depthOfField: 0,
-    locationDelta: initialDelta,
-  };
+    locationDelta: {
+      x: Math.cos((3 * Math.PI) / 4) * 0.0025,
+      y: Math.sin((3 * Math.PI) / 4) * 0.0025
+    },
+    speed: 0.0009
+  }), []);
+  
 
   //define initial level state
-  const map: Map = {
+  const map: Map = useMemo(() => ({
     rows: 20,
     columns: 20,
     cellSize: 64,
     cellSizeNormalized: 2.0 / 20,
     cells: [
-      0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0,
-      1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0,
-      0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1,
-      1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0,
-      0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1,
-      1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1,
-      1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0,
-      1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0,
-      1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1,
-      0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1,
-      1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0,
-      1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1,
-      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    ],
-  };
+      0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1,
+      1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1,
+      1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1,
+      1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1,
+      1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1,
+      1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1,
+      1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 
+      1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1,
+      1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 
+      1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 
+      1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1,
+      1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 
+      1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1,
+      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 
+      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
+      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
+      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  ]
+}), []);
 
-  const canvasMapRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const PI = Math.PI;
-
-  // State object to track key presses
-  const keyState: { [key: string]: boolean } = {
+  // State object to track key presses  
+  const keyState: { [key: string]: boolean } = useMemo(() => ({
     w: false,
     a: false,
     s: false,
-    d: false,
-  };
+    d: false
+  }), []);
+
+  const glRef = useRef<WebGLRenderingContext | null>(null);
+  const shadersProgramsRef = useRef<{
+    rayProgram: WebGLProgram | undefined,
+    mapProgram: WebGLProgram | undefined,
+    playerProgram: WebGLProgram | undefined,
+    pointerProgram: WebGLProgram | undefined,
+    threeDProgram: WebGLProgram | undefined,
+  }>({
+    rayProgram: undefined,
+    mapProgram: undefined,
+    playerProgram: undefined,
+    pointerProgram: undefined,
+    threeDProgram: undefined,
+  });
+
+  useEffect(() => {
+    if (!canvasRef) throw new Error("Error while retrieving canvas reference")
+    if (!canvasRef.current) throw new Error("Error while retrieving current property of canvas reference")
+
+    canvasRef.current.width = 2 * window.innerHeight;
+    canvasRef.current.height = window.innerHeight;
+    let canvas = canvasRef.current;
+
+    if (!canvas) throw new Error("Error while retrieving canvas")
+    glRef.current = canvas.getContext("webgl")!;
+    let gl = glRef.current ;
+
+    if (!gl) throw new Error("Error while retrieving gl context")
+
+    const createProgram = (vertexSrc: string, fragmentSrc: string) => {
+      const vertexShader = Utils.createShader(gl, gl.VERTEX_SHADER, vertexSrc);
+      const fragmentShader = Utils.createShader(gl, gl.FRAGMENT_SHADER, fragmentSrc);
+      if (!vertexShader || !fragmentShader) throw new Error("Error while creating shader");
+      return Utils.createProgram(gl, vertexShader, fragmentShader);
+    };
+
+    shadersProgramsRef.current =  {
+      rayProgram: createProgram(ShaderSource.RAY_VERTEX, ShaderSource.RAY_FRAGMENT),
+      mapProgram: createProgram(ShaderSource.MAP_VERTEX, ShaderSource.MAP_FRAGMENT),
+      playerProgram: createProgram(ShaderSource.PLAYER_VERTEX, ShaderSource.PLAYER_FRAGMENT),
+      pointerProgram: createProgram(ShaderSource.POINTER_VERTEX, ShaderSource.POINTER_FRAGMENT),
+      threeDProgram: createProgram(ShaderSource.THREED_VERTEX, ShaderSource.THREED_FRAGMENT),
+    };
+  }, []);
+
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -81,24 +129,24 @@ const WebGLComponent: React.FC = () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, []);
+  }, [keyState]);
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
       player.angle -= event.movementX * 0.005;
-      player.locationDelta.x = Math.cos(player.angle) * 0.0025;
-      player.locationDelta.y = Math.sin(player.angle) * 0.0025;
+      player.locationDelta.x = Math.cos(player.angle) * player.speed;
+      player.locationDelta.y = Math.sin(player.angle) * player.speed;
     };
 
     const handleClick = () => {
-      const canvas = canvasMapRef.current;
+      const canvas = canvasRef.current;
       if (canvas) {
         canvas.requestPointerLock();
       }
     };
 
     const handlePointerLockChange = () => {
-      if (document.pointerLockElement === canvasMapRef.current) {
+      if (document.pointerLockElement === canvasRef.current) {
         document.addEventListener("mousemove", handleMouseMove);
       } else {
         document.removeEventListener("mousemove", handleMouseMove);
@@ -106,7 +154,7 @@ const WebGLComponent: React.FC = () => {
     };
 
     document.addEventListener("pointerlockchange", handlePointerLockChange);
-    const canvas = canvasMapRef.current;
+    const canvas = canvasRef.current;
     if (canvas) {
       canvas.addEventListener("click", handleClick);
     }
@@ -121,92 +169,114 @@ const WebGLComponent: React.FC = () => {
         canvas.removeEventListener("click", handleClick);
       }
     };
-  }, []);
+  }, [player]);
 
   useEffect(() => {
-    const canvasMap = canvasMapRef.current;
-    if (!canvasMap) return;
-    canvasMap.width = 2 * window.innerHeight;
-    canvasMap.height = window.innerHeight;
-
-    const gl = canvasMap.getContext("webgl");
-
-    if (!gl) {
-      alert("Unable to initialize WebGL. Your browser may not support it.");
-      return;
-    }
-
-    const rayVertexShader = Utils.createShader(gl,gl.VERTEX_SHADER, ShaderSource.RAY_VERTEX);
-    const rayFragmentShader = Utils.createShader(gl, gl.FRAGMENT_SHADER, ShaderSource.RAY_FRAGMENT);
-    if (!rayVertexShader || !rayFragmentShader) throw new Error("Error while creating ray shader");
-    const rayProgram = Utils.createProgram(gl, rayVertexShader, rayFragmentShader);
-
-    const mapVertexShader = Utils.createShader(gl, gl.VERTEX_SHADER, ShaderSource.MAP_VERTEX);
-    const mapFragmentShader = Utils.createShader(gl, gl.FRAGMENT_SHADER, ShaderSource.MAP_FRAGMENT);
-    if (!mapVertexShader || !mapFragmentShader) throw new Error("Error while creating map shader");
-    const mapProgram = Utils.createProgram(gl, mapVertexShader, mapFragmentShader);
-
-    const playerVertexShader = Utils.createShader(gl, gl.VERTEX_SHADER, ShaderSource.PLAYER_VERTEX);
-    const playerFragmentShader = Utils.createShader(gl, gl.FRAGMENT_SHADER, ShaderSource.PLAYER_FRAGMENT);
-    if (!playerVertexShader || !playerFragmentShader) throw new Error("Error while creating player shader");
-    const playerProgram = Utils.createProgram(gl, playerVertexShader, playerFragmentShader);
-
-    const pointerVertexShader = Utils.createShader(gl, gl.VERTEX_SHADER, ShaderSource.POINTER_VERTEX);
-    const pointerFragmentShader = Utils.createShader(gl, gl.FRAGMENT_SHADER, ShaderSource.POINTER_FRAGMENT);
-    if (!pointerVertexShader || !pointerFragmentShader) throw new Error("Error while creating pointer shader");
-    const pointerProgram = Utils.createProgram(gl, pointerVertexShader, pointerFragmentShader);
-
-    const threeDVertexShader = Utils.createShader(gl, gl.VERTEX_SHADER, ShaderSource.THREED_VERTEX);
-    const threeDFragmentShader = Utils.createShader(gl, gl.FRAGMENT_SHADER, ShaderSource.THREED_FRAGMENT);
-    if (!threeDVertexShader || !threeDFragmentShader) throw new Error("Error while creating 3D shader");
-    const threeDProgram = Utils.createProgram(gl, threeDVertexShader, threeDFragmentShader);
-
     function updatePlayerPosition() {
+      
+      let distance = 0;
+      let moveX = 0;
+      let moveY = 0;
+    
       if (keyState.d) {
-        player.location.x += Math.cos(player.angle + PI / 2) * 0.0025;
-        player.location.y += Math.sin(player.angle + PI / 2) * 0.0025;
+        moveX = Math.cos(player.angle + Math.PI / 2) * player.speed;
+        moveY = Math.sin(player.angle + Math.PI / 2) * player.speed;
+        distance = 5;
       }
-
+    
       if (keyState.a) {
-        player.location.x += Math.cos(player.angle - PI / 2) * 0.0025;
-        player.location.y += Math.sin(player.angle - PI / 2) * 0.0025;
-      }
+        moveX = Math.cos(player.angle - Math.PI / 2) * player.speed;
+        moveY = Math.sin(player.angle - Math.PI / 2) * player.speed;
+        distance = 5;
 
-      if (keyState.w) {
-        player.location.x -= player.locationDelta.x;
-        player.location.y -= player.locationDelta.y;
       }
+    
+      if (keyState.w) {
+        moveX = -player.locationDelta.x;
+        moveY = -player.locationDelta.y;
+        distance = 20;
+      }
+    
       if (keyState.s) {
-        player.location.x += player.locationDelta.x;
-        player.location.y += player.locationDelta.y;
+        moveX = player.locationDelta.x;
+        moveY = player.locationDelta.y;
+        distance = 5;
+      }
+    
+      const canMove = (x: number, y: number): boolean => {
+        const nextLocationX = Utils.xNormalizedTodevice(player.location.x + x * distance);
+        const nextLocationY = Utils.yNormalizedTodevice(player.location.y + y * distance);
+        const cellY = nextLocationY >> 6;
+        const cellX = nextLocationX >> 6;
+        const cellChecked = cellY * map.rows + cellX;
+        return map.cells[cellChecked] === 0;
+      }
+    
+      let attemptedMove = false;
+    
+      if (moveX !== 0 || moveY !== 0) {
+        if (canMove(moveX, moveY)) {
+          player.location.x += moveX;
+          player.location.y += moveY;
+          attemptedMove = true;
+        } else {
+          // Try sliding along the X direction
+          if (moveX !== 0 && canMove(moveX, 0)) {
+            player.location.x += moveX;
+            attemptedMove = true;
+          }
+          // Try sliding along the Y direction
+          if (!attemptedMove && moveY !== 0 && canMove(0, moveY)) {
+            player.location.y += moveY;
+          }
+        }
       }
     }
+    
 
     function render() {
+
+
+      let gl = glRef.current;
       if (!gl) throw new Error("gl is null or underfined.");
+
+   
+        // Calculate FPS
+        const now = performance.now();
+        frameCount++;
+        const delta = (now - lastFrameTime) / 1000;
+        if (delta >= 1) {
+          setFps(Math.round(frameCount / delta));
+          frameCount = 0;
+          lastFrameTime = now;
+        };
 
       updatePlayerPosition();
 
       gl.enable(gl.SCISSOR_TEST);
 
-      if (!rayProgram) throw new Error("Error while creating ray program");
-      if (!threeDProgram) throw new Error("Error while creating 3D program");
-      Utils.drawRays(gl, rayProgram, threeDProgram, player, map);
+      if (!shadersProgramsRef) throw new Error("Error while creating a shader program"); 
+      let shadersPrograms = shadersProgramsRef.current;
 
-      if (!mapProgram) throw new Error("Error while creating map program");
-      Utils.drawMap2D(gl, mapProgram, map);
+      if (!shadersPrograms.rayProgram) throw new Error("Error while creating ray program");
+      if (!shadersPrograms.threeDProgram) throw new Error("Error while creating 3D program");
+      Utils.drawRays(gl, shadersPrograms.rayProgram, shadersPrograms.threeDProgram, player, map);
 
-      if (!playerProgram || !pointerProgram) throw new Error("Error while creating player/pointer program");
-      Utils.drawPlayer(gl, playerProgram, pointerProgram, player);
+      if (!shadersPrograms.mapProgram) throw new Error("Error while creating map program");
+      Utils.drawMap2D(gl, shadersPrograms.mapProgram, map);
+
+      if (!shadersPrograms.playerProgram || !shadersPrograms.pointerProgram) throw new Error("Error while creating player/pointer program");
+      Utils.drawPlayer(gl, shadersPrograms.playerProgram, shadersPrograms.pointerProgram, player);
 
       requestAnimationFrame(render);
     }
     render();
-  }, []);
+  }, [keyState.a, keyState.d, keyState.s, keyState.w, map, player, shadersProgramsRef, glRef]);
 
   return (
     <div>
-      <canvas ref={canvasMapRef}></canvas>
+      <div>FPS: {fps}</div>
+      <canvas ref={canvasRef}></canvas>
     </div>
   );
 };
