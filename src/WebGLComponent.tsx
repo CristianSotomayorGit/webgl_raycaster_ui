@@ -5,10 +5,12 @@ import "./App.css"; // Import the CSS file
 import { Player, Map } from "./types/src";
 
 const WebGLComponent: React.FC = () => {
-  const [fps, setFps] = useState(0);
-  let lastFrameTime = performance.now();
-  let frameCount = 0;
-//define initial player state
+  
+  // const [fps, setFps] = useState(0);
+  // let lastFrameTime = performance.now();
+  // let frameCount = 0;
+
+  //define initial player state
   const player: Player = useMemo(() => ({
     location: { x: -0.9, y: 0.9 },
     angle: (3 * Math.PI) / 4,
@@ -17,9 +19,8 @@ const WebGLComponent: React.FC = () => {
       x: Math.cos((3 * Math.PI) / 4) * 0.0025,
       y: Math.sin((3 * Math.PI) / 4) * 0.0025
     },
-    speed: 0.0009
+    speed: 0.0015
   }), []);
-  
 
   //define initial level state
   const map: Map = useMemo(() => ({
@@ -49,7 +50,7 @@ const WebGLComponent: React.FC = () => {
       1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
   ]
-}), []);
+  }), []);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -62,6 +63,7 @@ const WebGLComponent: React.FC = () => {
   }), []);
 
   const glRef = useRef<WebGLRenderingContext | null>(null);
+
   const shadersProgramsRef = useRef<{
     rayProgram: WebGLProgram | undefined,
     mapProgram: WebGLProgram | undefined,
@@ -77,11 +79,13 @@ const WebGLComponent: React.FC = () => {
   });
 
   useEffect(() => {
+    console.log('setting up canvas and shader programs')
     if (!canvasRef) throw new Error("Error while retrieving canvas reference")
     if (!canvasRef.current) throw new Error("Error while retrieving current property of canvas reference")
 
     canvasRef.current.width = 2 * window.innerHeight;
     canvasRef.current.height = window.innerHeight;
+
     let canvas = canvasRef.current;
 
     if (!canvas) throw new Error("Error while retrieving canvas")
@@ -106,8 +110,8 @@ const WebGLComponent: React.FC = () => {
     };
   }, []);
 
-
   useEffect(() => {
+    console.log('checking key presses')
     const handleKeyDown = (event: KeyboardEvent) => {
       const key = event.key.toLowerCase();
       if (key in keyState) {
@@ -132,10 +136,11 @@ const WebGLComponent: React.FC = () => {
   }, [keyState]);
 
   useEffect(() => {
+    console.log('checking mouse movement')
     const handleMouseMove = (event: MouseEvent) => {
       player.angle -= event.movementX * 0.005;
-      player.locationDelta.x = Math.cos(player.angle) * player.speed;
-      player.locationDelta.y = Math.sin(player.angle) * player.speed;
+      player.locationDelta.x = Math.cos(player.angle) * 0.0020;
+      player.locationDelta.y = Math.sin(player.angle) * 0.0020;
     };
 
     const handleClick = () => {
@@ -188,7 +193,6 @@ const WebGLComponent: React.FC = () => {
         moveX = Math.cos(player.angle - Math.PI / 2) * player.speed;
         moveY = Math.sin(player.angle - Math.PI / 2) * player.speed;
         distance = 5;
-
       }
     
       if (keyState.w) {
@@ -236,22 +240,21 @@ const WebGLComponent: React.FC = () => {
 
     function render() {
 
-
       let gl = glRef.current;
-      if (!gl) throw new Error("gl is null or underfined.");
 
-   
-        // Calculate FPS
-        const now = performance.now();
-        frameCount++;
-        const delta = (now - lastFrameTime) / 1000;
-        if (delta >= 1) {
-          setFps(Math.round(frameCount / delta));
-          frameCount = 0;
-          lastFrameTime = now;
-        };
+      // // Calculate FPS
+      // const now = performance.now();
+      // frameCount++;
+      // const delta = (now - lastFrameTime) / 1000;
+      // if (delta >= 1) {
+      //   setFps(Math.round(frameCount / delta));
+      //   frameCount = 0;
+      //   lastFrameTime = now;
+      // };
 
       updatePlayerPosition();
+
+      if (!gl) throw new Error("gl is null or underfined.");
 
       gl.enable(gl.SCISSOR_TEST);
 
@@ -275,7 +278,7 @@ const WebGLComponent: React.FC = () => {
 
   return (
     <div>
-      <div>FPS: {fps}</div>
+      {/* <div>FPS: {fps}</div> */}
       <canvas ref={canvasRef}></canvas>
     </div>
   );
