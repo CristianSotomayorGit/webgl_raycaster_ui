@@ -61,7 +61,7 @@ export class Utils {
     player: Player,
     map: Map,
   ) {
-    const rays = 180;
+    const rays = 160;
     let ray: Ray = { x: 0, y: 0, xOffset: 0, yOffset: 0, angle: player.angle - (DR / 2) * rays / 2 };
   
     // Keep ray from going out of range 0 -> 2*PI
@@ -71,10 +71,9 @@ export class Utils {
     // Limit drawing to main viewport and set background color
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.scissor(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clearColor(0.25, 0.25, 0.25, 1);
+    gl.clearColor(0.1137, 0.1137, 0.1137, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
   
-    const rectangles: number[] = [];
     const horizontalRectangles: number[] = [];
     const verticalRectangles: number[] = [];
   
@@ -182,7 +181,7 @@ export class Utils {
         ray.y = this.yDeviceToNormalized(ray.y);
     
         // Fix fisheye distortion
-        var ca = player.angle - ray.angle;
+        let ca = player.angle - ray.angle;
         if (ca < 0) ca += 2 * PI;
         if (ca > 2 * PI) ca -= 2 * PI;
     
@@ -210,7 +209,7 @@ export class Utils {
         ray.y = this.yDeviceToNormalized(ray.y);
     
         // Fix fisheye distortion
-        var ca = player.angle - ray.angle;
+        let ca = player.angle - ray.angle;
         if (ca < 0) ca += 2 * PI;
         if (ca > 2 * PI) ca -= 2 * PI;
     
@@ -240,7 +239,7 @@ export class Utils {
     //project horizontal map lines in 3d
     let buffer = this.createAndFillBufferObject(gl,new Float32Array(horizontalRectangles));
     let attributeLocation = this.getAndEnableAttributeLocation(gl, program3D);
-    gl.uniform4f(rayColorUniformLocation, 0.25, 0, 0, 1); 
+    gl.uniform4f(rayColorUniformLocation, 0.6078, 0.4, 0.8667, 1);
     for (let i = 0; i < horizontalRectangles.length / 8; i++) {
       gl.drawArrays(gl.TRIANGLE_FAN, i * 4, 4);
     }
@@ -251,7 +250,7 @@ export class Utils {
     //project vertical map lines in 3d
     buffer = this.createAndFillBufferObject(gl, new Float32Array(verticalRectangles));
     attributeLocation = this.getAndEnableAttributeLocation(gl, program3D);
-    gl.uniform4f(rayColorUniformLocation, 0.333, 0.420, 0.184, 1); 
+    gl.uniform4f(rayColorUniformLocation, 0.5294, 0.3216, 0.7882, 1);
     for (let i = 0; i < verticalRectangles.length / 8; i++) {
       gl.drawArrays(gl.TRIANGLE_FAN, i * 4, 4);
     }
@@ -301,7 +300,7 @@ export class Utils {
     const viewportSize = gl.canvas.height / 4;
     gl.viewport(0, 0, viewportSize, viewportSize);
     gl.scissor(0, 0, viewportSize, viewportSize);
-    gl.clearColor(0.25, 0.25, 0.25, 1);
+    gl.clearColor(0.1137, 0.1137, 0.1137, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
   
     const rectangles: Float32Array[] = [];

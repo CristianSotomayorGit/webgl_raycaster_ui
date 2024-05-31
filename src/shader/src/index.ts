@@ -11,7 +11,7 @@ export enum ShaderSource {
   PLAYER_FRAGMENT = `
     precision mediump float;
     void main() {
-        gl_FragColor = vec4(1, 1, 0, 1);
+        gl_FragColor = vec4(0.6078, 0.4, 0.8667, 1);
     }
   `,
   MAP_VERTEX = ` 
@@ -24,7 +24,7 @@ export enum ShaderSource {
     precision mediump float;
     uniform vec4 u_color;
     void main() {
-        gl_FragColor = vec4(0.5, 0.5, 0.5, 1);
+        gl_FragColor = vec4(0.2941, 0.2941, 0.2941, 1.0);
     }
   `,
   RAY_VERTEX = `
@@ -50,7 +50,7 @@ export enum ShaderSource {
   POINTER_FRAGMENT = `
     precision mediump float;
     void main() {
-      gl_FragColor = vec4(1, 1, 0, 1);
+      gl_FragColor = vec4(0.6078, 0.4, 0.8667, 1);
     }
   `,
   THREED_VERTEX = `

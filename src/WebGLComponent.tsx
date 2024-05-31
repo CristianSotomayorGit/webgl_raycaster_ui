@@ -83,8 +83,8 @@ const WebGLComponent: React.FC = () => {
     if (!canvasRef) throw new Error("Error while retrieving canvas reference")
     if (!canvasRef.current) throw new Error("Error while retrieving current property of canvas reference")
 
-    canvasRef.current.width = 2 * window.innerHeight;
-    canvasRef.current.height = window.innerHeight;
+    canvasRef.current.width = 1080;
+    canvasRef.current.height = 720;
 
     let canvas = canvasRef.current;
 
@@ -276,10 +276,17 @@ const WebGLComponent: React.FC = () => {
     render();
   }, [keyState.a, keyState.d, keyState.s, keyState.w, map, player, shadersProgramsRef, glRef]);
 
+
+  const canvasStyle: React.CSSProperties = {
+    flex: 1, // Make the canvas take up the remaining space inside the column
+    width: '100%',
+    height: '100%',
+  };
+
   return (
     <div>
       {/* <div>FPS: {fps}</div> */}
-      <canvas ref={canvasRef}></canvas>
+      <canvas ref={canvasRef} style={canvasStyle}></canvas>
     </div>
   );
 };
