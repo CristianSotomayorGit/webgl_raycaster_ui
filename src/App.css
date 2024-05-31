@@ -37,6 +37,16 @@ canvas {
   font-style: italic;
 }
 
+.subtitle {
+  padding-left: 700px;
+  padding-top: 20px;
+  margin: 0;
+  color: darkcyan;
+  font-weight: bolder;
+  font-style: italic;
+  font-size: small;
+}
+
 .instructions {
   margin: 0;
   color: white;

@@ -5,12 +5,25 @@ import WebGLComponent from "./WebGLComponent";
 function App() {
   return (
     <div>
+      <div
+        className="subtitle"
+        style={{ display: "flex", alignItems: "center" }}
+      >
+        <p style={{ margin: "0 5px" }}>Built with</p>
+        <p style={{ margin: "0 5px" }}>React,</p>
+        <p style={{ margin: "0 5px" }}>WebGL</p>
+        <p style={{ margin: "0 5px" }}>&</p>
+        <p style={{ margin: "0 5px" }}>Typescript </p> 
+      </div> 
       <CenteredColumn>
         <p className="title">WebGL Raycaster Demo:</p>
         <WebGLComponent />
       </CenteredColumn>
       <CenteredColumn>
-        <div className='instructions' style={{ display: "flex", alignItems: "center" }}>
+        <div
+          className="instructions"
+          style={{ display: "flex", alignItems: "center" }}
+        >
           <p style={{ margin: "0 10px" }}>
             <strong>W:</strong> Move Forward
           </p>
