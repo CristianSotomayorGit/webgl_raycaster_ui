@@ -75,6 +75,8 @@ export class Utils {
     gl.clearColor(0.1137, 0.1137, 0.1137, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
   
+    const rayXLocations: number[] = [];
+    const rectangleHeights: number[] = [];
     const horizontalRectangles: number[] = [];
     const verticalRectangles: number[] = [];
   
@@ -204,10 +206,10 @@ export class Utils {
         hitDistance = horHitDistance;
 
         // DRAW MAP RAYS/3D ILLUSION
-        player.location.x = this.xDeviceToNormalized(player.location.x);
-        player.location.y = this.yDeviceToNormalized(player.location.y);
-        ray.x = this.xDeviceToNormalized(ray.x);
-        ray.y = this.yDeviceToNormalized(ray.y);
+        // player.location.x = this.xDeviceToNormalized(player.location.x);
+        // player.location.y = this.yDeviceToNormalized(player.location.y);
+        // ray.x = this.xDeviceToNormalized(ray.x);
+        // ray.y = this.yDeviceToNormalized(ray.y);
     
         // Fix fisheye distortion
         let ca = player.angle - ray.angle;
@@ -225,11 +227,19 @@ export class Utils {
     
         // horizontalRectangles.push(x0, y0, x1, y0, x1, y1, x0, y1);
         // let i = 0;
+        rectangleHeights.push(rectangleHeight);
+        rayXLocations.push(ray.x);
         for (let i = 0; i < 32; i ++) {
           let y0 = this.yDeviceToNormalized(rectangleOffset + (rectangleHeight/32) * (i));
           let y1 = this.yDeviceToNormalized((rectangleHeight/32) * (i+1) + rectangleOffset);
           horizontalRectangles.push(x0, y0, x1, y0, x1, y1, x0, y1)
         }
+
+        player.location.x = this.xDeviceToNormalized(player.location.x);
+        player.location.y = this.yDeviceToNormalized(player.location.y);
+        ray.x = this.xDeviceToNormalized(ray.x);
+        ray.y = this.yDeviceToNormalized(ray.y);
+    
       }
   
       ray.angle += DR / 2;
@@ -244,23 +254,48 @@ export class Utils {
     //project horizontal map lines in 3d
     let buffer = this.createAndFillBufferObject(gl,new Float32Array(horizontalRectangles));
     let attributeLocation = this.getAndEnableAttributeLocation(gl, program3D);
+    
+    
+    let x =  -1 ;
+    let j= 0;
     for (let i = 0; i < horizontalRectangles.length / 8; i++) {
-    //   if (brick[i ] === 0) {
-    //     gl.uniform4f(rayColorUniformLocation, 0.5, 0.5, 0.5, 1);
-    //   }
-    //   // else 
-      // console.log(i % 32, checkerBoard[(i % 32)], i, checkerBoard[i])
-      if (brick[i % 512]===0){         gl.uniform4f(rayColorUniformLocation, 0.5, 0.5, 0.5, 1);
-      }
-      else {      gl.uniform4f(rayColorUniformLocation, 0.6078, 0.4, 0.8667, 1);
-      }
-      gl.drawArrays(gl.TRIANGLE_FAN, i * 4, 4);
-    }
-    // for (let i = 0; i < horizontalRectangles.length / 512; i++) {
-    //   gl.uniform4f(rayColorUniformLocation, 0.6078 + (i*0.00125), 0.4 + (i*0.00125), 0.8667 + (i*0.00125), 1);
+      let y = i % 32;
+      let xO = (((rayXLocations[j] >>1 ) | 0) ) % 32
+        // /2) % 32))|0)
 
-    //   gl.drawArrays(gl.TRIANGLE_FAN, i * 4, 4);
-    // }
+      // if (i % 64 === 0) {
+      //   x += 1 
+      // }
+
+      // if (x > 64) { x=0;}
+
+      // x =+ xO
+      // let xO = 32 - ((((rayXLocations[horizontalRectangles.length / 8]) % 32))|0);
+      
+      // console.log(xO, y)
+      const c = (brick[xO + y *32]);
+      // const c = (checkerBoard[ x *32 + i % 512]);
+
+      gl.uniform4f(rayColorUniformLocation, c, c, c, 1);
+
+      gl.drawArrays(gl.TRIANGLE_FAN, i * 4, 4);
+
+
+      // if (i % 62 === 0 && y > 0) j++;
+      if (y === 31) j++;
+      
+
+  
+      // if (i < 31) {
+      //   x=0;
+      // }
+
+      // if (x > 31) { 
+      //   x =0;
+      // }
+      // else if (x == 31) { x =0;}
+    }
+
 
 
     gl.disableVertexAttribArray(attributeLocation);
