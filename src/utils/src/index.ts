@@ -1,3 +1,4 @@
+import { brick, checkerBoard } from "../../textures/src";
 import { Player, Ray, Map } from "../../types/src";
 
 const DR = 0.0174533;
@@ -220,11 +221,15 @@ export class Utils {
         const rectangleOffset = 640 - rectangleHeight / 2;
     
         let x0 = -(currentRay * rectangleWidth - 1);
-        let y0 = this.yDeviceToNormalized(rectangleOffset);
         let x1 = x0 + rectangleWidth;
-        let y1 = this.yDeviceToNormalized(rectangleHeight + rectangleOffset);
     
-        horizontalRectangles.push(x0, y0, x1, y0, x1, y1, x0, y1);
+        // horizontalRectangles.push(x0, y0, x1, y0, x1, y1, x0, y1);
+        // let i = 0;
+        for (let i = 0; i < 32; i ++) {
+          let y0 = this.yDeviceToNormalized(rectangleOffset + (rectangleHeight/32) * (i));
+          let y1 = this.yDeviceToNormalized((rectangleHeight/32) * (i+1) + rectangleOffset);
+          horizontalRectangles.push(x0, y0, x1, y0, x1, y1, x0, y1)
+        }
       }
   
       ray.angle += DR / 2;
@@ -239,10 +244,25 @@ export class Utils {
     //project horizontal map lines in 3d
     let buffer = this.createAndFillBufferObject(gl,new Float32Array(horizontalRectangles));
     let attributeLocation = this.getAndEnableAttributeLocation(gl, program3D);
-    gl.uniform4f(rayColorUniformLocation, 0.6078, 0.4, 0.8667, 1);
     for (let i = 0; i < horizontalRectangles.length / 8; i++) {
+    //   if (brick[i ] === 0) {
+    //     gl.uniform4f(rayColorUniformLocation, 0.5, 0.5, 0.5, 1);
+    //   }
+    //   // else 
+      // console.log(i % 32, checkerBoard[(i % 32)], i, checkerBoard[i])
+      if (brick[i % 512]===0){         gl.uniform4f(rayColorUniformLocation, 0.5, 0.5, 0.5, 1);
+      }
+      else {      gl.uniform4f(rayColorUniformLocation, 0.6078, 0.4, 0.8667, 1);
+      }
       gl.drawArrays(gl.TRIANGLE_FAN, i * 4, 4);
     }
+    // for (let i = 0; i < horizontalRectangles.length / 512; i++) {
+    //   gl.uniform4f(rayColorUniformLocation, 0.6078 + (i*0.00125), 0.4 + (i*0.00125), 0.8667 + (i*0.00125), 1);
+
+    //   gl.drawArrays(gl.TRIANGLE_FAN, i * 4, 4);
+    // }
+
+
     gl.disableVertexAttribArray(attributeLocation);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
     gl.deleteBuffer(buffer);
