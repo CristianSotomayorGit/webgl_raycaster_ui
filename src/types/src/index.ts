@@ -12,6 +12,30 @@ export interface Ray {
   xOffset: number;
   yOffset: number;
   angle: number;
+
+  horizontalCheck: {
+    x: number,
+    y: number,
+    distance: number,
+  }
+
+  verticalCheck: {
+    x: number,
+    y: number,
+    distance: number,
+  }
+
+  projection : {
+    height: number;
+    width: number;
+    offset: number;
+    coordinates: number[];
+  }
+
+  hit: {
+    distance: number
+    plane: 'HORIZONTAL' | 'VERTICAL' | ''
+  }
 }
 
 export interface Player {

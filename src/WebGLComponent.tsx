@@ -12,8 +12,10 @@ const WebGLComponent: React.FC = () => {
 
   //define initial player state
   const player: Player = useMemo(() => ({
-    location: { x: -0.9, y: 0.9 },
-    angle: (3 * Math.PI) / 4,
+    location: { x: 0.58, y: -0.7 },
+    // angle: (3 * Math.PI) / 4,
+    angle:4.5,
+
     depthOfField: 0,
     locationDelta: {
       x: Math.cos((3 * Math.PI) / 4) * 0.0025,
@@ -42,8 +44,8 @@ const WebGLComponent: React.FC = () => {
       1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 
       1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1,
       1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 
-      1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1,
-      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 
+      1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 2, 1, 1, 1,
+      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 
       1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
       1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
       1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
@@ -213,7 +215,7 @@ const WebGLComponent: React.FC = () => {
         const cellY = nextLocationY >> 6;
         const cellX = nextLocationX >> 6;
         const cellChecked = cellY * map.rows + cellX;
-        return map.cells[cellChecked] === 0;
+        return map.cells[cellChecked] === 0  || map.cells[cellChecked] === 2;
       }
     
       let attemptedMove = false;
