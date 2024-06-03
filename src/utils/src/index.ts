@@ -263,7 +263,7 @@ export class Utils {
         let x0 = -(currentRay * ray.projection.width - 1);
         let x1 = x0 + ray.projection.width;
         // console.log(cellCheckedHor);
-        // cellsChecked.push(cellCheckedHor);
+        cellsChecked.push(cellCheckedHor);
         rayHorizontalXLocations.push(ray.x);
         
         for (let i = 0; i < 32; i++) {
